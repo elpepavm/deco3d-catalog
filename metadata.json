@@ -1,0 +1,6 @@
+{
+  "name": "Deco3D - Catálogo y Variantes",
+  "description": "Gestor de catálogo y generador de variantes de color para productos de impresión 3D",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

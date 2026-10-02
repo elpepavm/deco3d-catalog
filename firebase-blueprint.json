@@ -1,0 +1,53 @@
+{
+  "entities": {
+    "CatalogItem": {
+      "title": "CatalogItem",
+      "description": "Publicación unitaria de producto 3D en catálogo",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID único del producto" },
+        "title": { "type": "string", "description": "Título descriptivo con color y SKU" },
+        "sku": { "type": "string", "description": "Código SKU único de variante" },
+        "filamentId": { "type": "string", "description": "ID del filamento usado" },
+        "filamentName": { "type": "string", "description": "Nombre comercial del filamento" },
+        "filamentHex": { "type": "string", "description": "Color hexadecimal del filamento" },
+        "material": { "type": "string", "description": "Tipo de material: PLA, PETG, etc." },
+        "price": { "type": "number", "description": "Precio de venta al público en ARS" },
+        "dimensions": { "type": "string", "description": "Medidas de la pieza impresa" },
+        "inStock": { "type": "boolean", "description": "Disponibilidad en stock" },
+        "category": { "type": "string", "description": "Categoría de producto" },
+        "images": { "type": "array", "description": "Lista de fotos en alta resolución" },
+        "createdAt": { "type": "string", "description": "Fecha de creación ISO" }
+      },
+      "required": ["id", "title", "sku", "price", "filamentHex"]
+    },
+    "BaseProduct": {
+      "title": "BaseProduct",
+      "description": "Plantilla de producto base para multiplicar variantes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID base del modelo 3D" },
+        "title": { "type": "string", "description": "Nombre del modelo 3D" },
+        "category": { "type": "string", "description": "Categoría principal" },
+        "basePrice": { "type": "number", "description": "Precio base sugerido" },
+        "sourceColorHex": { "type": "string", "description": "Color de la muestra original" },
+        "tolerance": { "type": "number", "description": "Tolerancia angular de matiz" },
+        "feather": { "type": "number", "description": "Suavizado de bordes" },
+        "skuBase": { "type": "string", "description": "Prefijo para generar SKUs" },
+        "dimensions": { "type": "string", "description": "Medidas de la pieza" },
+        "images": { "type": "array", "description": "Fotos originales del modelo" }
+      },
+      "required": ["id", "title", "skuBase"]
+    }
+  },
+  "firestore": {
+    "/catalog_items/{itemId}": {
+      "schema": "CatalogItem",
+      "description": "Catálogo completo de productos y variantes generadas"
+    },
+    "/base_products/{productId}": {
+      "schema": "BaseProduct",
+      "description": "Modelos 3D base para multiplicación"
+    }
+  }
+}

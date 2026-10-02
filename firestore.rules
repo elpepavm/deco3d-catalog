@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Catálogo de productos y variantes 3D
+    match /catalog_items/{itemId} {
+      allow read, write: if true;
+    }
+
+    // Modelos 3D base
+    match /base_products/{productId} {
+      allow read, write: if true;
+    }
+  }
+}
