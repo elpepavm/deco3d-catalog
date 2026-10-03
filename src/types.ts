@@ -66,6 +66,7 @@ export interface CatalogItem {
   material: string;
   category: string;
   price: number;
+  salePrice?: number; // Precio de oferta opcional (ej: para liquidación o promociones)
   sku: string;
   inStock: boolean;
   description: string;

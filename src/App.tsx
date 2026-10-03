@@ -89,6 +89,22 @@ export default function App() {
     }
   };
 
+  const handleUpdateItem = async (updatedItem: CatalogItem) => {
+    // Actualización inmediata local
+    setCatalogItems((prev) =>
+      prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+    );
+    showToast(`✅ "${updatedItem.title}" actualizado con éxito.`);
+
+    // Guardado en Firestore
+    try {
+      await saveCatalogItemToCloud(updatedItem);
+    } catch (err) {
+      console.error('Error al actualizar en Firestore:', err);
+      showToast('⚠️ Guardado localmente. Error al sincronizar con Firestore.');
+    }
+  };
+
   const handleAddProductsToCatalog = async (newItems: CatalogItem[]) => {
     setIsSyncing(true);
     // Actualización inmediata local
@@ -162,6 +178,7 @@ export default function App() {
             items={catalogItems}
             onToggleStock={handleToggleStock}
             onDeleteItem={handleDeleteItem}
+            onUpdateItem={handleUpdateItem}
             onOpenGenerator={() => setActiveTab('generator')}
           />
         )}

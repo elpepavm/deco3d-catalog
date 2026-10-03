@@ -50,9 +50,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ items }) => {
       'availability',
       'condition',
       'price',
+      'sale_price',
       'link',
       'image_link',
       'brand',
+      'product_type',
       'google_product_category',
       'color',
       'material',
@@ -61,9 +63,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ items }) => {
 
     const rows = items.map((item) => {
       const priceFormatted = `${item.price} ${currency}`;
+      const salePriceFormatted = item.salePrice && item.salePrice > 0 ? `${item.salePrice} ${currency}` : '';
       const cleanDesc = item.description.replace(/(\r\n|\n|\r)/gm, ' ').replace(/"/g, '""');
       const cleanTitle = item.title.replace(/"/g, '""');
       const availability = item.inStock ? 'in stock' : 'out of stock';
+      const productType = (item.category || 'Dummys').replace(/"/g, '""');
       
       // Link al producto o a WhatsApp directo
       let link = `${storeUrl.trim()}?sku=${encodeURIComponent(item.sku)}`;
@@ -92,9 +96,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ items }) => {
         `"${availability}"`,
         `"new"`,
         `"${priceFormatted}"`,
+        `"${salePriceFormatted}"`,
         `"${link}"`,
         `"${imageLink}"`,
         `"${brandName}"`,
+        `"${productType}"`,
         `"Toys & Games"`,
         `"${item.colorName}"`,
         `"${item.material}"`,
@@ -339,8 +345,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({ items }) => {
                 <th className="p-3 border-b border-slate-200 dark:border-slate-800">Título</th>
                 <th className="p-3 border-b border-slate-200 dark:border-slate-800">Color</th>
                 <th className="p-3 border-b border-slate-200 dark:border-slate-800">Disponibilidad</th>
-                <th className="p-3 border-b border-slate-200 dark:border-slate-800">Precio</th>
-                <th className="p-3 border-b border-slate-200 dark:border-slate-800">Categoría</th>
+                <th className="p-3 border-b border-slate-200 dark:border-slate-800">Precio Regular</th>
+                <th className="p-3 border-b border-slate-200 dark:border-slate-800 text-rose-500">Precio Oferta</th>
+                <th className="p-3 border-b border-slate-200 dark:border-slate-800">Tipo (product_type)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
@@ -369,7 +376,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({ items }) => {
                   <td className="p-3 font-sans font-bold">
                     ${item.price.toLocaleString('es-AR')} {currency}
                   </td>
-                  <td className="p-3 font-sans text-slate-500">{item.category}</td>
+                  <td className="p-3 font-sans">
+                    {item.salePrice && item.salePrice > 0 ? (
+                      <span className="font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 px-2 py-0.5 rounded-md">
+                        ${item.salePrice.toLocaleString('es-AR')} {currency}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 text-[11px]">—</span>
+                    )}
+                  </td>
+                  <td className="p-3 font-sans text-indigo-600 dark:text-indigo-400 font-medium">
+                    {item.category || 'Dummys'}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CatalogItem } from '../types';
 import { CATEGORIES } from '../data/filaments';
+import { EditProductModal } from './EditProductModal';
 import { 
   Search, 
   Check, 
@@ -12,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Hand,
+  Pencil,
   Image as ImageIcon
 } from 'lucide-react';
 
@@ -19,6 +21,7 @@ interface CatalogViewProps {
   items: CatalogItem[];
   onToggleStock: (id: string) => void;
   onDeleteItem: (id: string) => void;
+  onUpdateItem: (updatedItem: CatalogItem) => void;
   onOpenGenerator: () => void;
 }
 
@@ -26,12 +29,14 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   items,
   onToggleStock,
   onDeleteItem,
+  onUpdateItem,
   onOpenGenerator,
 }) => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [stockFilter, setStockFilter] = useState<'all' | 'inStock' | 'outOfStock'>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<CatalogItem | null>(null);
   
   // Mapa de índice de foto activa por producto (para navegar por las hasta 10 fotos)
   const [activePhotoIdxMap, setActivePhotoIdxMap] = useState<Record<string, number>>({});
@@ -59,6 +64,15 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
       maximumFractionDigits: 0,
     }).format(item.price);
 
+    const priceText =
+      item.salePrice && item.salePrice > 0 && item.salePrice < item.price
+        ? `🔥 *Precio de OFERTA:* ${new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            maximumFractionDigits: 0,
+          }).format(item.salePrice)} (Antes: ${formattedPrice})`
+        : `💰 *Precio:* ${formattedPrice}`;
+
     const totalPhotos = item.images?.length || (item.handImage ? 2 : 1);
 
     const message = `👋 ¡Hola! Te paso los detalles del producto:
@@ -66,7 +80,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
 📦 *${item.title.toUpperCase()}*
 🎨 *Color:* ${item.colorName} (${item.material})
 📏 *Medidas/Escala:* ${item.dimensions}
-💰 *Precio:* ${formattedPrice}
+${priceText}
 📸 *Fotos disponibles:* ${totalPhotos} fotos (portada, escala en mano, detalles)
 ✅ *Disponibilidad:* ${item.inStock ? 'En stock para entrega inmediata' : 'Impresión bajo pedido (24-48 hs)'}
 
@@ -354,21 +368,48 @@ ${item.description}
                   {/* Precio y Botones de Acción */}
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] text-slate-400 block uppercase font-medium">Precio</span>
-                      <span className="text-base font-extrabold text-slate-900 dark:text-white">
-                        {new Intl.NumberFormat('es-AR', {
-                          style: 'currency',
-                          currency: 'ARS',
-                          maximumFractionDigits: 0,
-                        }).format(item.price)}
-                      </span>
+                      {item.salePrice && item.salePrice > 0 && item.salePrice < item.price ? (
+                        <div>
+                          <div className="flex items-center space-x-1">
+                            <span className="text-[10px] text-slate-400 line-through">
+                              ${item.price.toLocaleString('es-AR')}
+                            </span>
+                            <span className="text-[9px] font-extrabold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 px-1 py-0.2 rounded uppercase">
+                              Oferta
+                            </span>
+                          </div>
+                          <span className="text-base font-extrabold text-rose-600 dark:text-rose-400 block">
+                            ${item.salePrice.toLocaleString('es-AR')}
+                          </span>
+                        </div>
+                      ) : (
+                        <div>
+                          <span className="text-[10px] text-slate-400 block uppercase font-medium">Precio</span>
+                          <span className="text-base font-extrabold text-slate-900 dark:text-white">
+                            {new Intl.NumberFormat('es-AR', {
+                              style: 'currency',
+                              currency: 'ARS',
+                              maximumFractionDigits: 0,
+                            }).format(item.price)}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center space-x-1.5">
+                    <div className="flex items-center space-x-1">
+                      {/* Botón Editar Producto */}
+                      <button
+                        onClick={() => setEditingItem(item)}
+                        className="p-1.5 text-slate-500 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                        title="Editar nombre, descripción, categoría, precio y oferta"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+
                       {/* Botón Copiar para WhatsApp */}
                       <button
                         onClick={() => handleCopyWhatsApp(item)}
-                        className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all ${
+                        className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all ${
                           copiedId === item.id
                             ? 'bg-emerald-600 text-white'
                             : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
@@ -404,6 +445,17 @@ ${item.description}
           })}
         </div>
       )}
+
+      {/* Modal de edición de producto */}
+      <EditProductModal
+        isOpen={!!editingItem}
+        item={editingItem}
+        onClose={() => setEditingItem(null)}
+        onSave={(updated) => {
+          onUpdateItem(updated);
+          setEditingItem(null);
+        }}
+      />
     </div>
   );
 };

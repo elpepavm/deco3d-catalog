@@ -55,9 +55,11 @@ export const FILAMENT_COLORS: FilamentColor[] = [
 
 export const CATEGORIES = [
   'Todos',
+  'Dummys',
+  'Animales Articulados',
   'Figuras Articuladas',
-  'Soportes y Accesorios',
   'Decoración y Macetas',
-  'Juguetes y Antiestrés',
+  'Soportes y Accesorios',
+  'Llaveros',
   'Hogar y Oficina',
 ];
