@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { BaseProduct, CatalogItem } from './types';
+import { BaseProduct, CatalogItem, InboxItem } from './types';
 import { getInitialBaseProducts, getInitialCatalogItems } from './data/initialCatalog';
-import { Navbar } from './components/Navbar';
+import { Navbar, NavigationTab } from './components/Navbar';
 import { CatalogView } from './components/CatalogView';
+import { InboxPipelineView } from './components/InboxPipelineView';
+import { ReviewPipelineView } from './components/ReviewPipelineView';
 import { VariantMultiplier } from './components/VariantMultiplierModal';
 import { ColorStudioPlayground } from './components/ColorStudioPlayground';
 import { ExportModal } from './components/ExportModal';
 import { 
   subscribeToCatalog, 
   saveCatalogBatchToCloud, 
+  saveCatalogItemToCloud,
   toggleStockInCloud, 
   deleteCatalogItemFromCloud,
   subscribeToBaseProducts,
@@ -17,9 +20,10 @@ import {
 import { CloudCheck, CloudUpload } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'catalog' | 'generator' | 'studio' | 'export'>('catalog');
+  const [activeTab, setActiveTab] = useState<NavigationTab>('catalog');
   const [baseProducts, setBaseProducts] = useState<BaseProduct[]>(getInitialBaseProducts);
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>(getInitialCatalogItems);
+  const [inboxItems, setInboxItems] = useState<InboxItem[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isCloudSynced, setIsCloudSynced] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
@@ -59,16 +63,98 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  // Separación del Pipeline: Borradores vs Publicados en Catálogo Activo
+  const publishedItems = catalogItems.filter((i) => i.status !== 'draft');
+  const draftItems = catalogItems.filter((i) => i.status === 'draft');
+
+  // --- Handlers de Bandeja de Entrada (Paso 1) ---
+  const handleAddInboxItem = (item: InboxItem) => {
+    setInboxItems((prev) => [item, ...prev]);
+    showToast('📥 Foto añadida a la Bandeja de Entrada.');
+  };
+
+  const handleRemoveInboxItem = (id: string) => {
+    setInboxItems((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  const handleUpdateInboxItem = (updated: InboxItem) => {
+    setInboxItems((prev) =>
+      prev.map((i) => (i.id === updated.id ? updated : i))
+    );
+  };
+
+  // Cuando se procesan las fotos de la bandeja y se generan variantes en "Revisión"
+  const handleGenerateToReview = (generatedItems: CatalogItem[], inboxItemId: string) => {
+    setCatalogItems((prev) => [...generatedItems, ...prev]);
+    setInboxItems((prev) => prev.filter((i) => i.id !== inboxItemId));
+    showToast(`⚡ ${generatedItems.length} variantes generadas. Pasaron a Revisión.`);
+    setActiveTab('review');
+  };
+
+  // --- Handlers de En Revisión (Paso 2) ---
+  const handleApproveItem = async (id: string) => {
+    const item = catalogItems.find((i) => i.id === id);
+    if (!item) return;
+
+    const approvedItem: CatalogItem = { ...item, status: 'published' };
+
+    setCatalogItems((prev) =>
+      prev.map((i) => (i.id === id ? approvedItem : i))
+    );
+    showToast(`✅ "${approvedItem.title}" aprobado y publicado en WhatsApp.`);
+
+    try {
+      await saveCatalogItemToCloud(approvedItem);
+    } catch (err) {
+      console.error('Error al guardar producto aprobado en Firestore:', err);
+    }
+  };
+
+  const handleApproveAll = async () => {
+    const approvedBatch = draftItems.map((d) => ({
+      ...d,
+      status: 'published' as const,
+    }));
+
+    setCatalogItems((prev) =>
+      prev.map((i) => (i.status === 'draft' ? { ...i, status: 'published' } : i))
+    );
+
+    showToast(`🚀 ${approvedBatch.length} productos aprobados y publicados.`);
+    setActiveTab('catalog');
+
+    try {
+      await saveCatalogBatchToCloud(approvedBatch);
+    } catch (err) {
+      console.error('Error al guardar lote aprobado en Firestore:', err);
+    }
+  };
+
+  const handleDiscardItem = async (id: string) => {
+    setCatalogItems((prev) => prev.filter((i) => i.id !== id));
+    showToast('Borrador descartado.');
+
+    try {
+      await deleteCatalogItemFromCloud(id);
+    } catch (err) {
+      console.error('Error al borrar borrador en Firestore:', err);
+    }
+  };
+
+  const handleDiscardAll = () => {
+    setCatalogItems((prev) => prev.filter((i) => i.status !== 'draft'));
+    showToast('Todos los borradores fueron descartados.');
+  };
+
+  // --- Handlers de Catálogo Activo (Paso 3) ---
   const handleToggleStock = async (id: string) => {
     const item = catalogItems.find((i) => i.id === id);
     const newStock = item ? !item.inStock : false;
 
-    // Actualización optimista local
     setCatalogItems((prev) =>
       prev.map((i) => (i.id === id ? { ...i, inStock: newStock } : i))
     );
 
-    // Guardado en la nube
     try {
       await toggleStockInCloud(id, newStock);
     } catch (err) {
@@ -77,11 +163,9 @@ export default function App() {
   };
 
   const handleDeleteItem = async (id: string) => {
-    // Actualización optimista local
     setCatalogItems((prev) => prev.filter((item) => item.id !== id));
     showToast('Producto eliminado del catálogo.');
 
-    // Eliminación en la nube
     try {
       await deleteCatalogItemFromCloud(id);
     } catch (err) {
@@ -90,13 +174,11 @@ export default function App() {
   };
 
   const handleUpdateItem = async (updatedItem: CatalogItem) => {
-    // Actualización inmediata local
     setCatalogItems((prev) =>
       prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
     );
     showToast(`✅ "${updatedItem.title}" actualizado con éxito.`);
 
-    // Guardado en Firestore
     try {
       await saveCatalogItemToCloud(updatedItem);
     } catch (err) {
@@ -107,12 +189,10 @@ export default function App() {
 
   const handleAddProductsToCatalog = async (newItems: CatalogItem[]) => {
     setIsSyncing(true);
-    // Actualización inmediata local
     setCatalogItems((prev) => [...newItems, ...prev]);
     showToast(`¡Se crearon con éxito ${newItems.length} publicaciones unitarias con sus fotos!`);
     setActiveTab('catalog');
 
-    // Sincronizar lote en Firestore
     try {
       await saveCatalogBatchToCloud(newItems);
       setIsCloudSynced(true);
@@ -125,7 +205,7 @@ export default function App() {
     }
   };
 
-  const inStockCount = catalogItems.filter((i) => i.inStock).length;
+  const inStockCount = publishedItems.filter((i) => i.inStock).length;
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors">
@@ -133,7 +213,9 @@ export default function App() {
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        totalProducts={catalogItems.length}
+        inboxCount={inboxItems.length}
+        reviewCount={draftItems.length}
+        totalProducts={publishedItems.length}
         inStockCount={inStockCount}
       />
 
@@ -173,13 +255,38 @@ export default function App() {
 
       {/* Contenido Principal según Pestaña */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        {/* Paso 1: Bandeja de Entrada */}
+        {activeTab === 'inbox' && (
+          <InboxPipelineView
+            inboxItems={inboxItems}
+            onAddInboxItem={handleAddInboxItem}
+            onRemoveInboxItem={handleRemoveInboxItem}
+            onUpdateInboxItem={handleUpdateInboxItem}
+            onGenerateToReview={handleGenerateToReview}
+          />
+        )}
+
+        {/* Paso 2: En Revisión */}
+        {activeTab === 'review' && (
+          <ReviewPipelineView
+            draftItems={draftItems}
+            onApproveItem={handleApproveItem}
+            onApproveAll={handleApproveAll}
+            onDiscardItem={handleDiscardItem}
+            onDiscardAll={handleDiscardAll}
+            onUpdateDraftItem={handleUpdateItem}
+            onGoToActiveCatalog={() => setActiveTab('catalog')}
+          />
+        )}
+
+        {/* Paso 3: Catálogo Activo */}
         {activeTab === 'catalog' && (
           <CatalogView
-            items={catalogItems}
+            items={publishedItems}
             onToggleStock={handleToggleStock}
             onDeleteItem={handleDeleteItem}
             onUpdateItem={handleUpdateItem}
-            onOpenGenerator={() => setActiveTab('generator')}
+            onOpenGenerator={() => setActiveTab('inbox')}
           />
         )}
 
@@ -195,7 +302,7 @@ export default function App() {
 
         {activeTab === 'export' && (
           <ExportModal
-            items={catalogItems}
+            items={publishedItems}
           />
         )}
       </main>
@@ -207,7 +314,7 @@ export default function App() {
           <span>• Catálogo & Multiplicador de Variantes Fotográficas</span>
         </div>
         <div className="flex items-center space-x-4 text-[11px] text-slate-400">
-          <span>{catalogItems.length} productos en catálogo</span>
+          <span>{publishedItems.length} productos en WhatsApp</span>
           <span className="text-emerald-500 flex items-center gap-1 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
             Nube Activa
@@ -217,3 +324,4 @@ export default function App() {
     </div>
   );
 }
+

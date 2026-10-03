@@ -11,7 +11,8 @@ import {
   Settings2, 
   ExternalLink,
   MessageCircle,
-  HelpCircle
+  HelpCircle,
+  Globe
 } from 'lucide-react';
 
 interface ExportModalProps {
@@ -31,6 +32,8 @@ const DEFAULT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1581092160607-
 
 export const ExportModal: React.FC<ExportModalProps> = ({ items }) => {
   const [copied, setCopied] = useState(false);
+  const [copiedFeedUrl, setCopiedFeedUrl] = useState(false);
+  const feedLiveUrl = 'https://deco3d-catalog.vercel.app/api/catalog.csv';
   
   // Opciones configurables para Meta Business
   const [storeUrl, setStoreUrl] = useState('https://tinyurl.com/deco3dvm');
@@ -132,17 +135,81 @@ export const ExportModal: React.FC<ExportModalProps> = ({ items }) => {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Banner Principal */}
+      {/* Caja Destacada: URL de Sincronización Automática para Meta */}
+      <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-emerald-950 border border-emerald-500/40 rounded-2xl p-6 shadow-xl text-white space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center space-x-3">
+            <span className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <Globe className="w-6 h-6" />
+            </span>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="font-extrabold text-base">URL de Sincronización Automática para Meta</h3>
+                <span className="text-[10px] font-bold bg-emerald-500 text-slate-950 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Recomendado • 100% Automático
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Pega este enlace en Meta Commerce para que tu catálogo y precios se sincronicen solos sin volver a descargar archivos.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(feedLiveUrl);
+              setCopiedFeedUrl(true);
+              setTimeout(() => setCopiedFeedUrl(false), 2500);
+            }}
+            className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs flex items-center space-x-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer shrink-0"
+          >
+            {copiedFeedUrl ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            <span>{copiedFeedUrl ? '¡URL Copiada!' : 'Copiar Enlace para Meta'}</span>
+          </button>
+        </div>
+
+        {/* Input con la URL completa */}
+        <div className="flex items-center space-x-2 bg-slate-950/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5">
+          <span className="text-xs text-slate-500 font-mono select-none">URL de tu feed:</span>
+          <span className="text-xs font-mono text-emerald-400 font-semibold truncate flex-1 select-all">
+            {feedLiveUrl}
+          </span>
+        </div>
+
+        {/* Pasos para configurar en Meta Commerce */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1 text-xs text-slate-300">
+          <div className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 space-y-1">
+            <span className="font-bold text-white block text-xs">1. En Meta Commerce</span>
+            <p className="text-slate-400 text-[11px] leading-relaxed">
+              Ve a <strong>Catálogo ➔ Orígenes de datos</strong> y haz clic en <strong>Añadir productos ➔ Lista de datos</strong>.
+            </p>
+          </div>
+          <div className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 space-y-1">
+            <span className="font-bold text-white block text-xs">2. Elige "Usar una URL"</span>
+            <p className="text-slate-400 text-[11px] leading-relaxed">
+              Selecciona la opción <strong>Usar una URL</strong> y pega este enlace copiado en el casillero.
+            </p>
+          </div>
+          <div className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 space-y-1">
+            <span className="font-bold text-white block text-xs">3. Horario automático</span>
+            <p className="text-slate-400 text-[11px] leading-relaxed">
+              Define actualización diaria (ej: 04:00 AM) ¡y tus productos se actualizarán solos en WhatsApp!
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Banner Principal de Exportación Manual (Opcional) */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-900/40 rounded-2xl p-6 shadow-sm text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
             <span className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
               <FileSpreadsheet className="w-5 h-5" />
             </span>
-            <h2 className="text-xl font-bold">Exportador para Meta Business & WhatsApp Catalog</h2>
+            <h2 className="text-base font-bold">Descarga Manual de Respaldo (.CSV)</h2>
           </div>
-          <p className="text-sm text-slate-300 max-w-2xl mt-1">
-            Genera un archivo <strong>CSV estructurado con productos unitarios independientes</strong>. Compatible 100% con la especificación de Meta Commerce Manager para WhatsApp Business.
+          <p className="text-xs text-slate-300 max-w-2xl mt-1">
+            Si prefieres subir el archivo manualmente como hiciste antes, puedes descargarlo aquí.
           </p>
         </div>
 

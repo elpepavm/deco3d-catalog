@@ -74,6 +74,21 @@ export interface CatalogItem {
   coverImage: string;
   handImage?: string;
   images: CatalogImageItem[]; // Lista completa de fotos (hasta 10 fotos por producto)
+  status?: 'draft' | 'published'; // draft = en revisión (no va a Meta), published = en catálogo activo
+  createdAt: string;
+}
+
+export interface InboxItem {
+  id: string;
+  title: string;
+  category: string;
+  basePrice: number;
+  skuPrefix: string;
+  sourceImage: string;
+  sourceHandImage?: string;
+  selectedColorIds: string[];
+  dimensions: string;
+  description: string;
   createdAt: string;
 }
 
