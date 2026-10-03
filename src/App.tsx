@@ -219,32 +219,6 @@ export default function App() {
         inStockCount={inStockCount}
       />
 
-      {/* Indicador sutil de Nube Firebase */}
-      <div className="bg-slate-900 border-b border-slate-800 px-6 py-1.5 flex items-center justify-between text-[11px] text-slate-400">
-        <div className="flex items-center space-x-2">
-          {isSyncing ? (
-            <>
-              <CloudUpload className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span className="text-amber-300 font-medium">Sincronizando con Firebase Firestore...</span>
-            </>
-          ) : isCloudSynced ? (
-            <>
-              <CloudCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-emerald-400 font-medium">Base de Datos en la Nube Activa</span>
-              <span className="text-slate-500">• Todos tus productos se guardan automáticamente</span>
-            </>
-          ) : (
-            <>
-              <CloudUpload className="w-3.5 h-3.5 text-blue-400" />
-              <span>Conectando a Firebase Firestore...</span>
-            </>
-          )}
-        </div>
-        <div className="font-mono text-slate-500 text-[10px]">
-          Firestore DB: ai-studio-deco3d
-        </div>
-      </div>
-
       {/* Notificación Toast flotante */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 text-sm font-semibold flex items-center space-x-2 animate-bounce">
@@ -307,18 +281,32 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-4 px-6 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <div className="flex items-center space-x-2">
+      {/* Footer con resumen sutil de sincronización */}
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-3 px-4 sm:px-6 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-2 gap-y-1">
           <span className="font-bold text-slate-700 dark:text-slate-300">Deco 3D Studio</span>
-          <span>• Catálogo & Multiplicador de Variantes Fotográficas</span>
+          <span className="hidden sm:inline text-slate-400">•</span>
+          <span className="text-[11px] text-slate-400">{publishedItems.length} productos en catálogo</span>
         </div>
-        <div className="flex items-center space-x-4 text-[11px] text-slate-400">
-          <span>{publishedItems.length} productos en WhatsApp</span>
-          <span className="text-emerald-500 flex items-center gap-1 font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-            Nube Activa
-          </span>
+
+        {/* Resumen sutil de Nube (trasladado aquí para mantener el menú superior limpio) */}
+        <div className="flex items-center space-x-3 text-[11px]">
+          {isSyncing ? (
+            <span className="flex items-center gap-1.5 text-amber-500 font-medium">
+              <CloudUpload className="w-3.5 h-3.5 animate-pulse" />
+              <span>Sincronizando...</span>
+            </span>
+          ) : isCloudSynced ? (
+            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+              <CloudCheck className="w-3.5 h-3.5" />
+              <span>Nube conectada y sincronizada</span>
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 text-slate-400">
+              <CloudUpload className="w-3.5 h-3.5" />
+              <span>Conectando...</span>
+            </span>
+          )}
         </div>
       </footer>
     </div>

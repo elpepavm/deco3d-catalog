@@ -121,25 +121,25 @@ ${item.description}
   };
 
   return (
-    <div className="space-y-6">
-      {/* Banner explicativo del catálogo unitario */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-900/40 rounded-2xl p-5 shadow-sm text-white">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="space-y-1">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header simplificado del catálogo */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-900/40 rounded-2xl p-4 sm:p-5 shadow-sm text-white">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="space-y-0.5 sm:space-y-1">
             <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                Lógica WhatsApp & Meta
+              <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                Meta & WhatsApp
               </span>
-              <h2 className="text-lg font-bold">Catálogo de Productos Unitarios (Galerías de hasta 10 fotos)</h2>
+              <h2 className="text-base sm:text-lg font-bold">Catálogo de Productos Unitarios</h2>
             </div>
-            <p className="text-sm text-slate-300 max-w-2xl">
-              Cada color está publicado como un <strong>producto independiente</strong> para evitar fallas de sincronización con el catálogo de WhatsApp. Podés subir y recolorear hasta 10 fotos por pieza (portada, en mano, ángulos y detalles).
+            <p className="hidden sm:block text-xs sm:text-sm text-slate-300 max-w-2xl">
+              Cada color está publicado como un <strong>producto independiente</strong> para sincronizar con el catálogo de WhatsApp.
             </p>
           </div>
 
           <button
             onClick={onOpenGenerator}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-semibold rounded-xl shadow-lg shadow-rose-600/20 transition-all text-sm whitespace-nowrap"
+            className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2 sm:py-2.5 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-semibold rounded-xl shadow-md transition-all text-xs sm:text-sm whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             <span>Multiplicar por Colores</span>
