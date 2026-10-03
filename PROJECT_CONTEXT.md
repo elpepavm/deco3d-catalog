@@ -23,6 +23,8 @@
 * **Animaciones**: `motion` v12.23.24.
 * **Backend de desarrollo**: Express 4.21.2 + tsx 4.21.0 + dotenv 17.2.3.
 * **Repositorio GitHub**: `https://github.com/elpepavm/deco3d-catalog.git` (rama `main`).
+* **Despliegue de Producción Vercel**: `https://deco3d-catalog.vercel.app` (100% público, CDN global).
+* **Enlace Corto / Amigable Oficial**: `https://tinyurl.com/deco3dvm` ➔ `https://deco3d-catalog.vercel.app`.
 
 ---
 
@@ -273,7 +275,11 @@ recoloredRgb = { r: satinLuma, g: satinLuma, b: Math.min(255, satinLuma + 3) };
   * **Meta Commerce Manager** (Instagram Shopping & Facebook Shops).
   * **WhatsApp Business Catalog**.
 * **Columnas exportadas**:
-  `id, title, description, availability, condition, price, link, image_link, brand, google_product_category, color, material`.
+  `id, title, description, availability, condition, price, link, image_link, brand, google_product_category, color, material, additional_image_link`.
+* **Configuración Dinámica**:
+  * Selector de destino del enlace (Catálogo Web con URL amigable por defecto `https://tinyurl.com/decocatalogo` o Enlace Directo a WhatsApp `https://wa.me/549...`).
+  * Personalización de nombre de marca y divisa (ARS).
+  * Soporte de `additional_image_link` para fotos secundarias (en mano / ángulos).
 * Botón de copiado al portapapeles y botón de descarga de archivo `.csv`.
 
 ---

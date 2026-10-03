@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
-import { Download, Copy, Check, ExternalLink, HelpCircle, ShoppingBag, Settings, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import { CatalogItem } from '../types';
+import { 
+  FileSpreadsheet, 
+  Download, 
+  Copy, 
+  Check, 
+  Info, 
+  CheckCircle2, 
+  AlertCircle, 
+  Settings2, 
+  ExternalLink,
+  MessageCircle,
+  HelpCircle
+} from 'lucide-react';
 
 interface ExportModalProps {
   items: CatalogItem[];
@@ -109,143 +121,122 @@ export const ExportModal: React.FC<ExportModalProps> = ({ items }) => {
   const handleCopyCsv = () => {
     navigator.clipboard.writeText(csvContent);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 2500);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header explicativo con Banner Verde */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 opacity-10 flex items-center pr-6 pointer-events-none">
-          <ShoppingBag className="w-48 h-48" />
-        </div>
-        <div className="relative z-10 max-w-2xl">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/30 text-emerald-100 border border-emerald-400/30 mb-3">
-            <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> WhatsApp Business & Meta Commerce Ready
-          </span>
-          <h2 className="text-2xl font-black tracking-tight mb-2">
-            Exportar a Catálogo de WhatsApp (Meta CSV)
-          </h2>
-          <p className="text-emerald-100 text-sm leading-relaxed">
-            Genera un archivo CSV oficial optimizado con la arquitectura <strong>1 SKU = 1 Color Físico</strong>. 
-            Permite que cada variante tenga su propia foto de portada, foto en mano teñida a escala real y control de stock independiente.
+    <div className="space-y-6 max-w-6xl mx-auto">
+      {/* Banner Principal */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-900/40 rounded-2xl p-6 shadow-sm text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center space-x-2">
+            <span className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              <FileSpreadsheet className="w-5 h-5" />
+            </span>
+            <h2 className="text-xl font-bold">Exportador para Meta Business & WhatsApp Catalog</h2>
+          </div>
+          <p className="text-sm text-slate-300 max-w-2xl mt-1">
+            Genera un archivo <strong>CSV estructurado con productos unitarios independientes</strong>. Compatible 100% con la especificación de Meta Commerce Manager para WhatsApp Business.
           </p>
         </div>
-      </div>
 
-      {/* Barra de Acciones Principales */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="flex items-center space-x-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Total a exportar:
-          </span>
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
-            {items.length} productos / colores
-          </span>
-        </div>
-
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setShowConfig(!showConfig)}
-            className={`px-3 py-2 text-xs font-semibold rounded-xl border flex items-center space-x-1.5 transition-colors ${
-              showConfig 
-                ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200' 
-                : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-            }`}
+            className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold border border-slate-700 transition-colors"
           >
-            <Settings className="w-4 h-4" />
-            <span>Configuración de Enlaces</span>
+            <Settings2 className="w-4 h-4 text-indigo-400" />
+            <span>{showConfig ? 'Ocultar Ajustes' : 'Configurar Enlaces'}</span>
           </button>
 
           <button
             onClick={handleCopyCsv}
-            className="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center space-x-1.5"
+            className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold border border-slate-700 transition-colors"
           >
-            {copied ? (
-              <>
-                <Check className="w-4 h-4 text-emerald-500" />
-                <span className="text-emerald-600 dark:text-emerald-400">¡Copiado!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4 text-slate-400" />
-                <span>Copiar CSV</span>
-              </>
-            )}
+            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+            <span>{copied ? '¡Copiado!' : 'Copiar CSV'}</span>
           </button>
 
           <button
             onClick={handleDownloadCsv}
-            className="px-5 py-2.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg transition-all flex items-center space-x-2"
+            className="flex items-center space-x-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
           >
             <Download className="w-4 h-4" />
-            <span>Descargar .CSV para Meta</span>
+            <span>Descargar .CSV ({items.length} productos)</span>
           </button>
         </div>
       </div>
 
-      {/* Configuración desplegable opcional */}
+      {/* Panel de Ajustes / Configuración Rápida */}
       {showConfig && (
-        <div className="bg-slate-50 dark:bg-slate-850 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-in fade-in duration-200 text-xs">
-          <h4 className="font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2">
-            <Settings className="w-4 h-4 text-indigo-500" />
-            <span>Parámetros de Enlace y Tienda para Meta Commerce</span>
-          </h4>
+        <div className="bg-slate-50 dark:bg-slate-900/80 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 transition-all">
+          <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
+            <Settings2 className="w-4 h-4" />
+            <h3 className="text-sm font-bold">Parámetros del Catálogo Meta</h3>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Destino del botón "Ver en el sitio web" en WhatsApp:
               </label>
-              <div className="flex space-x-4 mt-2">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="linkDest"
-                    checked={linkDestination === 'catalog'}
-                    onChange={() => setLinkDestination('catalog')}
-                    className="text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span className="text-slate-700 dark:text-slate-300">Abrir Catálogo Web Deco 3D</span>
-                </label>
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="linkDest"
-                    checked={linkDestination === 'whatsapp'}
-                    onChange={() => setLinkDestination('whatsapp')}
-                    className="text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span className="text-slate-700 dark:text-slate-300">Mensaje directo de WhatsApp</span>
-                </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setLinkDestination('catalog')}
+                  className={`p-2 rounded-lg border text-center font-medium transition-all ${
+                    linkDestination === 'catalog'
+                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  Catálogo Web (TinyURL)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLinkDestination('whatsapp')}
+                  className={`p-2 rounded-lg border text-center font-medium transition-all ${
+                    linkDestination === 'whatsapp'
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  Chat de WhatsApp Directo
+                </button>
               </div>
             </div>
 
             {linkDestination === 'catalog' ? (
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  URL pública de la tienda / catálogo:
+                  URL base del catálogo:
                 </label>
                 <input
                   type="text"
                   value={storeUrl}
                   onChange={(e) => setStoreUrl(e.target.value)}
-                  placeholder="https://tinyurl.com/deco3dvm"
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 text-xs focus:outline-indigo-500 font-mono"
+                  placeholder="https://tinyurl.com/decocatalogo"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 font-mono text-xs focus:outline-indigo-500"
                 />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Los clientes verán este link al tocar el producto en WhatsApp.
+                </span>
               </div>
             ) : (
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Número de WhatsApp (con código de país sin +):
+                  Número de WhatsApp (con código país):
                 </label>
                 <input
                   type="text"
                   value={whatsappNumber}
                   onChange={(e) => setWhatsappNumber(e.target.value)}
-                  placeholder="5491122334455"
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 text-xs focus:outline-indigo-500 font-mono"
+                  placeholder="54911..."
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 font-mono text-xs focus:outline-emerald-500"
                 />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Ej: 54911... para Argentina (sin '+' ni espacios).
+                </span>
               </div>
             )}
 
@@ -292,49 +283,93 @@ export const ExportModal: React.FC<ExportModalProps> = ({ items }) => {
         </div>
       </div>
 
+      {/* Explicación Técnica y Beneficios */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="flex items-center space-x-2 text-emerald-600">
+            <CheckCircle2 className="w-4 h-4" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              Cero Errores de Sincronización
+            </h3>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Al no incluir <code className="text-[11px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">item_group_id</code>, WhatsApp trata a cada color como un producto real. No se ocultan publicaciones ni se rompen menús.
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="flex items-center space-x-2 text-indigo-600">
+            <CheckCircle2 className="w-4 h-4" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              Control de Stock por Filamento
+            </h3>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Si te quedás sin filamento Amarillo, solo cambiás el estado de ese producto específico a <span className="font-semibold text-rose-500">out of stock</span> sin afectar a los demás colores.
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="flex items-center space-x-2 text-amber-600">
+            <CheckCircle2 className="w-4 h-4" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              Fotos en Mano Sincronizadas
+            </h3>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Cada producto cuenta con su foto de portada y su foto en la mano teñidas al color correspondiente, brindando escala real e inmediata al cliente.
+          </p>
+        </div>
+      </div>
+
       {/* Previsualización del CSV */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
         <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             Vista Previa de la Tabla ({items.length} filas)
           </span>
-          <span className="text-[11px] text-slate-400">
-            Desplaza horizontalmente para ver todas las columnas
-          </span>
+          <span className="text-xs text-slate-400">Formato RFC 4180 (Meta Commerce Spec)</span>
         </div>
-        <div className="overflow-x-auto max-h-80">
-          <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 sticky top-0 border-b border-slate-200 dark:border-slate-800">
+
+        <div className="overflow-x-auto max-h-96 text-xs font-mono">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 uppercase text-[10px] tracking-wider sticky top-0">
               <tr>
-                <th className="p-3">id (SKU)</th>
-                <th className="p-3">title</th>
-                <th className="p-3">price</th>
-                <th className="p-3">availability</th>
-                <th className="p-3">color</th>
-                <th className="p-3">image_link</th>
-                <th className="p-3">link</th>
+                <th className="p-3 border-b border-slate-200 dark:border-slate-800">SKU (ID)</th>
+                <th className="p-3 border-b border-slate-200 dark:border-slate-800">Título</th>
+                <th className="p-3 border-b border-slate-200 dark:border-slate-800">Color</th>
+                <th className="p-3 border-b border-slate-200 dark:border-slate-800">Disponibilidad</th>
+                <th className="p-3 border-b border-slate-200 dark:border-slate-800">Precio</th>
+                <th className="p-3 border-b border-slate-200 dark:border-slate-800">Categoría</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-              {items.map((it) => (
-                <tr key={it.id} className="hover:bg-slate-50 dark:hover:bg-slate-850">
-                  <td className="p-3 font-bold text-indigo-600 dark:text-indigo-400">{it.sku}</td>
-                  <td className="p-3 max-w-xs truncate">{it.title}</td>
-                  <td className="p-3 text-emerald-600 dark:text-emerald-400 font-semibold">{it.price} {currency}</td>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
+              {items.map((item) => (
+                <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                  <td className="p-3 font-bold text-slate-900 dark:text-white">{item.sku}</td>
+                  <td className="p-3 font-sans max-w-xs truncate">{item.title}</td>
+                  <td className="p-3 flex items-center space-x-1.5 font-sans">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full border border-black/20"
+                      style={{ backgroundColor: item.colorHex }}
+                    />
+                    <span>{item.colorName}</span>
+                  </td>
                   <td className="p-3">
-                    <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
-                      it.inStock ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
-                    }`}>
-                      {it.inStock ? 'in stock' : 'out of stock'}
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        item.inStock
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                          : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                      }`}
+                    >
+                      {item.inStock ? 'in stock' : 'out of stock'}
                     </span>
                   </td>
-                  <td className="p-3">{it.colorName}</td>
-                  <td className="p-3 text-slate-400 truncate max-w-xs">
-                    {VERIFIED_PUBLIC_IMAGES[it.sku] || DEFAULT_FALLBACK_IMAGE}
+                  <td className="p-3 font-sans font-bold">
+                    ${item.price.toLocaleString('es-AR')} {currency}
                   </td>
-                  <td className="p-3 text-slate-400 truncate max-w-xs">
-                    {storeUrl}?sku={it.sku}
-                  </td>
+                  <td className="p-3 font-sans text-slate-500">{item.category}</td>
                 </tr>
               ))}
             </tbody>
