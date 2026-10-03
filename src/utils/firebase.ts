@@ -9,7 +9,8 @@ import {
   onSnapshot, 
   getDocFromServer,
   getDocs,
-  writeBatch
+  writeBatch,
+  deleteField
 } from 'firebase/firestore';
 import { CatalogItem, BaseProduct } from '../types';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -153,12 +154,47 @@ export async function sanitizeBaseProductForFirestore(product: BaseProduct): Pro
 }
 
 /**
- * Guarda o actualiza un producto individual en Firestore
+ * Elimina recursivamente cualquier propiedad con valor undefined antes de enviar a Firestore,
+ * evitando que la base de datos rechace la operación con 'Unsupported field value: undefined'.
+ */
+export function cleanFirestoreData<T extends Record<string, any>>(obj: T): Record<string, any> {
+  const cleaned: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === undefined) {
+      continue;
+    }
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      cleaned[key] = cleanFirestoreData(value);
+    } else if (Array.isArray(value)) {
+      cleaned[key] = value.map((item) =>
+        item !== null && typeof item === 'object' ? cleanFirestoreData(item) : item
+      );
+    } else {
+      cleaned[key] = value;
+    }
+  }
+  return cleaned;
+}
+
+/**
+ * Guarda o actualiza un producto individual en Firestore de forma 100% segura.
+ * Si el usuario borra la oferta, utiliza deleteField() para retirarla limpiamente en la nube.
  */
 export async function saveCatalogItemToCloud(item: CatalogItem): Promise<void> {
   const safeItem = await sanitizeItemForFirestore(item);
   const docRef = doc(db, CATALOG_COLLECTION, safeItem.id);
-  await setDoc(docRef, safeItem, { merge: true });
+  
+  const cleaned = cleanFirestoreData(safeItem);
+  
+  // Si el precio de oferta existe y es > 0, lo guardamos.
+  // Si fue removido o es indefinido, le indicamos a Firestore que elimine el campo para evitar errores.
+  if (safeItem.salePrice !== undefined && safeItem.salePrice !== null && Number(safeItem.salePrice) > 0) {
+    cleaned.salePrice = Number(safeItem.salePrice);
+  } else {
+    cleaned.salePrice = deleteField();
+  }
+
+  await setDoc(docRef, cleaned, { merge: true });
 }
 
 /**
@@ -166,14 +202,14 @@ export async function saveCatalogItemToCloud(item: CatalogItem): Promise<void> {
  */
 export async function saveCatalogBatchToCloud(items: CatalogItem[]): Promise<void> {
   const safeItems = await Promise.all(items.map(sanitizeItemForFirestore));
-  // Firestore soporta hasta 500 operaciones por lote
   const batchSize = 400;
   for (let i = 0; i < safeItems.length; i += batchSize) {
     const chunk = safeItems.slice(i, i + batchSize);
     const batch = writeBatch(db);
     chunk.forEach((item) => {
       const ref = doc(db, CATALOG_COLLECTION, item.id);
-      batch.set(ref, item, { merge: true });
+      const cleaned = cleanFirestoreData(item);
+      batch.set(ref, cleaned, { merge: true });
     });
     await batch.commit();
   }
@@ -216,5 +252,6 @@ export function subscribeToBaseProducts(
 export async function saveBaseProductToCloud(product: BaseProduct): Promise<void> {
   const safeProduct = await sanitizeBaseProductForFirestore(product);
   const docRef = doc(db, BASE_PRODUCTS_COLLECTION, safeProduct.id);
-  await setDoc(docRef, safeProduct, { merge: true });
+  const cleaned = cleanFirestoreData(safeProduct);
+  await setDoc(docRef, cleaned, { merge: true });
 }
