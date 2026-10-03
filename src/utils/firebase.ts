@@ -232,6 +232,22 @@ export async function deleteCatalogItemFromCloud(id: string): Promise<void> {
 }
 
 /**
+ * Elimina múltiples productos de la nube en lote
+ */
+export async function deleteCatalogBatchFromCloud(ids: string[]): Promise<void> {
+  const batchSize = 400;
+  for (let i = 0; i < ids.length; i += batchSize) {
+    const chunk = ids.slice(i, i + batchSize);
+    const batch = writeBatch(db);
+    chunk.forEach((id) => {
+      const ref = doc(db, CATALOG_COLLECTION, id);
+      batch.delete(ref);
+    });
+    await batch.commit();
+  }
+}
+
+/**
  * Escucha cambios en los productos base
  */
 export function subscribeToBaseProducts(

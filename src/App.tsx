@@ -8,12 +8,14 @@ import { ReviewPipelineView } from './components/ReviewPipelineView';
 import { VariantMultiplier } from './components/VariantMultiplierModal';
 import { ColorStudioPlayground } from './components/ColorStudioPlayground';
 import { ExportModal } from './components/ExportModal';
+import { BatchEditUpdates } from './components/BatchEditModal';
 import { 
   subscribeToCatalog, 
   saveCatalogBatchToCloud, 
   saveCatalogItemToCloud,
   toggleStockInCloud, 
   deleteCatalogItemFromCloud,
+  deleteCatalogBatchFromCloud,
   subscribeToBaseProducts,
   saveBaseProductToCloud
 } from './utils/firebase';
@@ -146,6 +148,95 @@ export default function App() {
     showToast('Todos los borradores fueron descartados.');
   };
 
+  // --- Handlers de Operaciones en Lote (Batch Operations) ---
+  const handleApproveBatch = async (ids: string[]) => {
+    const approvedBatch: CatalogItem[] = [];
+    setCatalogItems((prev) =>
+      prev.map((i) => {
+        if (ids.includes(i.id)) {
+          const approved = { ...i, status: 'published' as const };
+          approvedBatch.push(approved);
+          return approved;
+        }
+        return i;
+      })
+    );
+    showToast(`🚀 ${approvedBatch.length} productos aprobados y publicados.`);
+    try {
+      await saveCatalogBatchToCloud(approvedBatch);
+    } catch (err) {
+      console.error('Error al guardar lote aprobado en Firestore:', err);
+    }
+  };
+
+  const handleDiscardBatch = async (ids: string[]) => {
+    setCatalogItems((prev) => prev.filter((i) => !ids.includes(i.id)));
+    showToast(`🗑️ ${ids.length} borradores descartados.`);
+    try {
+      await deleteCatalogBatchFromCloud(ids);
+    } catch (err) {
+      console.error('Error al borrar lote en Firestore:', err);
+    }
+  };
+
+  const handleBatchUpdate = async (ids: string[], updates: BatchEditUpdates) => {
+    const updatedBatch: CatalogItem[] = [];
+    setCatalogItems((prev) =>
+      prev.map((item) => {
+        if (!ids.includes(item.id)) return item;
+        const updated: CatalogItem = {
+          ...item,
+          price: updates.price !== undefined ? updates.price : item.price,
+          salePrice:
+            updates.salePrice === null
+              ? undefined
+              : updates.salePrice !== undefined
+              ? updates.salePrice
+              : item.salePrice,
+          category: updates.category !== undefined ? updates.category : item.category,
+          inStock: updates.inStock !== undefined ? updates.inStock : item.inStock,
+          dimensions: updates.dimensions !== undefined ? updates.dimensions : item.dimensions,
+        };
+        updatedBatch.push(updated);
+        return updated;
+      })
+    );
+    showToast(`✅ ${ids.length} productos actualizados en lote.`);
+    try {
+      await saveCatalogBatchToCloud(updatedBatch);
+    } catch (err) {
+      console.error('Error al guardar actualización en lote en Firestore:', err);
+    }
+  };
+
+  const handleBatchToggleStock = async (ids: string[], inStock: boolean) => {
+    const updatedBatch: CatalogItem[] = [];
+    setCatalogItems((prev) =>
+      prev.map((item) => {
+        if (!ids.includes(item.id)) return item;
+        const updated = { ...item, inStock };
+        updatedBatch.push(updated);
+        return updated;
+      })
+    );
+    showToast(`📦 ${ids.length} productos marcados como ${inStock ? 'En Stock' : 'Sin Stock'}.`);
+    try {
+      await saveCatalogBatchToCloud(updatedBatch);
+    } catch (err) {
+      console.error('Error al actualizar stock en lote:', err);
+    }
+  };
+
+  const handleDeleteBatch = async (ids: string[]) => {
+    setCatalogItems((prev) => prev.filter((item) => !ids.includes(item.id)));
+    showToast(`🗑️ ${ids.length} productos eliminados del catálogo.`);
+    try {
+      await deleteCatalogBatchFromCloud(ids);
+    } catch (err) {
+      console.error('Error al eliminar lote en Firestore:', err);
+    }
+  };
+
   // --- Handlers de Catálogo Activo (Paso 3) ---
   const handleToggleStock = async (id: string) => {
     const item = catalogItems.find((i) => i.id === id);
@@ -246,9 +337,12 @@ export default function App() {
             draftItems={draftItems}
             onApproveItem={handleApproveItem}
             onApproveAll={handleApproveAll}
+            onApproveBatch={handleApproveBatch}
             onDiscardItem={handleDiscardItem}
             onDiscardAll={handleDiscardAll}
+            onDiscardBatch={handleDiscardBatch}
             onUpdateDraftItem={handleUpdateItem}
+            onBatchUpdateDrafts={handleBatchUpdate}
             onGoToActiveCatalog={() => setActiveTab('catalog')}
           />
         )}
@@ -261,6 +355,9 @@ export default function App() {
             onDeleteItem={handleDeleteItem}
             onUpdateItem={handleUpdateItem}
             onOpenGenerator={() => setActiveTab('inbox')}
+            onBatchUpdate={handleBatchUpdate}
+            onDeleteBatch={handleDeleteBatch}
+            onBatchToggleStock={handleBatchToggleStock}
           />
         )}
 
