@@ -388,7 +388,7 @@ export async function recolorImage(
   }
 
   ctx.putImageData(imgData, 0, 0);
-  return canvas.toDataURL('image/png');
+  return canvas.toDataURL('image/jpeg', 0.85);
 }
 
 /**

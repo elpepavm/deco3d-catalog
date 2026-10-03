@@ -183,7 +183,7 @@ export function createDummy13StudioImage(armorColorHex = '#e11d48'): string {
   safeRoundRect(ctx, 274, 190, 25, 60, 4);
   ctx.fill();
 
-  return canvas.toDataURL('image/png');
+  return canvas.toDataURL('image/jpeg', 0.82);
 }
 
 /**
@@ -342,7 +342,7 @@ export function createDummy13HandImage(armorColorHex = '#e11d48'): string {
   ctx.font = '600 13px system-ui, -apple-system, sans-serif';
   ctx.fillText('✋ Escala: ~14 cm (en mano adulta)', 20, 575);
 
-  return canvas.toDataURL('image/png');
+  return canvas.toDataURL('image/jpeg', 0.82);
 }
 
 /**
@@ -409,7 +409,7 @@ export function createPlanterStudioImage(colorHex = '#2563eb'): string {
     ctx.fill();
   }
 
-  return canvas.toDataURL('image/png');
+  return canvas.toDataURL('image/jpeg', 0.82);
 }
 
 /**
@@ -480,5 +480,5 @@ export function createPlanterHandImage(colorHex = '#2563eb'): string {
   ctx.font = '600 13px system-ui, -apple-system, sans-serif';
   ctx.fillText('✋ Escala: ~8 cm x 9 cm (en palma)', 20, 575);
 
-  return canvas.toDataURL('image/png');
+  return canvas.toDataURL('image/jpeg', 0.82);
 }
