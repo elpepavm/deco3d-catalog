@@ -33,7 +33,7 @@ const DEFAULT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1581092160607-
 export const ExportModal: React.FC<ExportModalProps> = ({ items }) => {
   const [copied, setCopied] = useState(false);
   const [copiedFeedUrl, setCopiedFeedUrl] = useState(false);
-  const feedLiveUrl = 'https://deco3d-catalog.vercel.app/api/catalog.csv';
+  const feedLiveUrl = 'https://deco3d-catalog.vercel.app/catalog.csv';
   
   // Opciones configurables para Meta Business
   const [storeUrl, setStoreUrl] = useState('https://tinyurl.com/deco3dvm');
