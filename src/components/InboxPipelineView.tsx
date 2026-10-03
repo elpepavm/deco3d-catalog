@@ -121,7 +121,7 @@ export const InboxPipelineView: React.FC<InboxPipelineViewProps> = ({
 
         setProgressText(`Tiñendo color ${i + 1} de ${item.selectedColorIds.length}: ${filament.name}...`);
 
-        const recoloredDataUrl = recolorImage(img, {
+        const recoloredDataUrl = await recolorImage(img, {
           sourceColorHex: detectedColor,
           targetColorHex: filament.hex,
           tolerance: 45,
