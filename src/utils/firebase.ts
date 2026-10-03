@@ -1,6 +1,9 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { 
   getFirestore, 
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   collection, 
   doc, 
   setDoc, 
@@ -18,8 +21,18 @@ import firebaseConfig from '../../firebase-applet-config.json';
 // Inicializar Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Conectar con Firestore usando el Database ID asignado
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
+// Conectar con Firestore usando Database ID y persistencia de caché local (IndexedDB)
+export const db = (() => {
+  try {
+    return initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
+    }, firebaseConfig.firestoreDatabaseId || '(default)');
+  } catch {
+    return getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
+  }
+})();
 
 // Validar conexión según especificaciones de la plataforma
 export async function testFirestoreConnection(): Promise<boolean> {
