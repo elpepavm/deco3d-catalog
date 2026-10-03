@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layers, Palette, Package, FileSpreadsheet, Sparkles, CheckCircle2 } from 'lucide-react';
 
-export type NavigationTab = 'inbox' | 'review' | 'catalog' | 'generator' | 'studio' | 'export';
+export type NavigationTab = 'inbox' | 'review' | 'catalog' | 'export';
 
 interface NavbarProps {
   activeTab: NavigationTab;
@@ -113,18 +113,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <FileSpreadsheet className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Feed Meta</span>
               <span className="inline sm:hidden">Feed</span>
-            </button>
-
-            {/* Multiplicador y Estudio */}
-            <button
-              onClick={() => setActiveTab('generator')}
-              className={`hidden md:flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 shrink-0 ${
-                activeTab === 'generator' ? 'bg-slate-800 text-white' : ''
-              }`}
-              title="Multiplicador avanzado con cuentagotas de blindaje"
-            >
-              <Palette className="w-3.5 h-3.5" />
-              <span>Avanzado</span>
             </button>
           </nav>
         </div>

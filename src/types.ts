@@ -90,5 +90,10 @@ export interface InboxItem {
   dimensions: string;
   description: string;
   createdAt: string;
+  sourceColorHex?: string;
+  tolerance?: number;
+  feather?: number;
+  protectSkin?: boolean;
+  protectNeutrals?: boolean;
 }
 

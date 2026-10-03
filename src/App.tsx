@@ -5,8 +5,6 @@ import { Navbar, NavigationTab } from './components/Navbar';
 import { CatalogView } from './components/CatalogView';
 import { InboxPipelineView } from './components/InboxPipelineView';
 import { ReviewPipelineView } from './components/ReviewPipelineView';
-import { VariantMultiplier } from './components/VariantMultiplierModal';
-import { ColorStudioPlayground } from './components/ColorStudioPlayground';
 import { ExportModal } from './components/ExportModal';
 import { BatchEditUpdates } from './components/BatchEditModal';
 import { 
@@ -360,16 +358,6 @@ export default function App() {
             onBatchToggleStock={handleBatchToggleStock}
           />
         )}
-
-        {activeTab === 'generator' && (
-          <VariantMultiplier
-            baseProducts={baseProducts}
-            onAddProductsToCatalog={handleAddProductsToCatalog}
-            onClose={() => setActiveTab('catalog')}
-          />
-        )}
-
-        {activeTab === 'studio' && <ColorStudioPlayground />}
 
         {activeTab === 'export' && (
           <ExportModal

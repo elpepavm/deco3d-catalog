@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { InboxItem, FilamentColor, CatalogItem } from '../types';
 import { FILAMENT_COLORS, CATEGORIES } from '../data/filaments';
 import { recolorImage, loadImage, detectDominantPlasticColor } from '../utils/recolorEngine';
+import { TintSettingsModal } from './TintSettingsModal';
 import { 
   Upload, 
   Trash2, 
@@ -12,7 +13,8 @@ import {
   Info,
   Palette,
   Loader2,
-  Tag
+  Tag,
+  SlidersHorizontal
 } from 'lucide-react';
 
 interface InboxPipelineViewProps {
@@ -33,6 +35,7 @@ export const InboxPipelineView: React.FC<InboxPipelineViewProps> = ({
 }) => {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [progressText, setProgressText] = useState<string>('');
+  const [tintSettingsItem, setTintSettingsItem] = useState<InboxItem | null>(null);
 
   const presetCategories = CATEGORIES.filter((c) => c !== 'Todos');
 
@@ -122,12 +125,12 @@ export const InboxPipelineView: React.FC<InboxPipelineViewProps> = ({
         setProgressText(`Tiñendo color ${i + 1} de ${item.selectedColorIds.length}: ${filament.name}...`);
 
         const recoloredDataUrl = await recolorImage(img, {
-          sourceColorHex: detectedColor,
+          sourceColorHex: item.sourceColorHex || detectedColor,
           targetColorHex: filament.hex,
-          tolerance: 45,
-          feather: 15,
-          protectSkin: true,
-          protectNeutrals: true,
+          tolerance: item.tolerance ?? 45,
+          feather: item.feather ?? 15,
+          protectSkin: item.protectSkin ?? true,
+          protectNeutrals: item.protectNeutrals ?? true,
         });
 
         // Sufijo SKU a partir del nombre del color
@@ -360,29 +363,46 @@ export const InboxPipelineView: React.FC<InboxPipelineViewProps> = ({
 
                     {/* Selector de Colores (Tildar los deseados) */}
                     <div className="pt-2">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                         <div className="flex items-center space-x-2">
                           <Palette className="w-4 h-4 text-indigo-500" />
                           <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                            Colores a generar ({item.selectedColorIds.length} seleccionados):
+                            Colores a generar ({item.selectedColorIds.length}):
                           </span>
                         </div>
-                        <div className="flex items-center space-x-2 text-[11px]">
+
+                        <div className="flex items-center space-x-2">
+                          {/* Botón Ajustes de Tinción con Cuentagotas */}
                           <button
                             type="button"
-                            onClick={() => handleSelectAllColors(item, true)}
-                            className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold"
+                            onClick={() => setTintSettingsItem(item)}
+                            className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-[11px] font-semibold transition-all border border-indigo-200/60 dark:border-indigo-800"
+                            title="Ajustar tolerancia, blindaje y cuentagotas con previsualización en vivo"
                           >
-                            Tildar Todos
+                            <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-500" />
+                            <span>Ajustes de Tinción</span>
+                            {item.tolerance && (
+                              <span className="text-[10px] opacity-75 font-mono">({item.tolerance}°)</span>
+                            )}
                           </button>
-                          <span className="text-slate-300 dark:text-slate-700">•</span>
-                          <button
-                            type="button"
-                            onClick={() => handleSelectAllColors(item, false)}
-                            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                          >
-                            Deseleccionar
-                          </button>
+
+                          <div className="flex items-center space-x-1.5 text-[11px]">
+                            <button
+                              type="button"
+                              onClick={() => handleSelectAllColors(item, true)}
+                              className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold"
+                            >
+                              Todos
+                            </button>
+                            <span className="text-slate-300 dark:text-slate-700">•</span>
+                            <button
+                              type="button"
+                              onClick={() => handleSelectAllColors(item, false)}
+                              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            >
+                              Ninguno
+                            </button>
+                          </div>
                         </div>
                       </div>
 
@@ -453,6 +473,16 @@ export const InboxPipelineView: React.FC<InboxPipelineViewProps> = ({
           </div>
         </div>
       )}
+      {/* Modal de Ajustes de Tinción y Cuentagotas */}
+      <TintSettingsModal
+        isOpen={!!tintSettingsItem}
+        item={tintSettingsItem}
+        onClose={() => setTintSettingsItem(null)}
+        onSave={(updated) => {
+          onUpdateInboxItem(updated);
+          setTintSettingsItem(null);
+        }}
+      />
     </div>
   );
 };
