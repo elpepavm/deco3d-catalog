@@ -283,17 +283,55 @@ export async function recolorImage(
 
     if (a < 10) continue;
 
-    // Si hay máscara de IA, la zona fuera de la máscara (maskData < 30) se protege al 100%
+    const origLum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    const pixHsv = rgbToHsv(r, g, b);
+
+    // CASO A: CUANDO HAY MÁSCARA DE IA ACTIVA (Segment Anything)
     if (maskData) {
-      const maskVal = maskData[i]; // 255 = pieza, 0 = protegido
+      const maskVal = maskData[i];
       if (maskVal < 30) {
+        // Pixel fuera de la máscara: 100% blindado por la IA (ojos, flor, fondo)
         continue;
       }
+
+      // Este pixel ES parte del muñeco 3D.
+      // Fundido natural de sombras al nuevo filamento:
+      // Conservamos la luz y relieve original (origLum) para que se mantenga el volumen 3D,
+      // pero TODO el tono y saturación toman el del nuevo filamento sin dejar manchas verdes residuales.
+      const shadeRatio = Math.max(0.04, origLum) / Math.max(0.12, srcLum);
+      const normShade = Math.min(1.4, Math.max(0.12, shadeRatio));
+
+      let recoloredRgb: { r: number; g: number; b: number };
+
+      if (tgtHsv.s < 0.05 && tgtHsv.v > 0.85) {
+        // Blanco PLA
+        const whiteLuma = Math.min(244, Math.round(172 + Math.pow(normShade, 0.68) * 70));
+        recoloredRgb = { r: whiteLuma, g: whiteLuma, b: whiteLuma };
+      } else if (tgtHsv.s < 0.05 && tgtHsv.v < 0.22) {
+        // Negro Satinado PLA
+        const satinLuma = Math.round(22 + Math.pow(normShade, 0.72) * 78);
+        recoloredRgb = { r: satinLuma, g: satinLuma, b: Math.min(255, satinLuma + 3) };
+      } else if (tgtHsv.s < 0.06) {
+        // Gris
+        const neutralV = Math.max(0.08, Math.min(0.96, tgtHsv.v * Math.pow(shadeRatio, 0.85)));
+        recoloredRgb = hsvToRgb(tgtHsv.h, tgtHsv.s, neutralV);
+      } else {
+        // Filamentos de Color (Fucsia, Rojo, Amarillo, etc.)
+        // Fundido continuo de sombras:
+        // El matiz es 100% el nuevo filamento (cero residuo verde en sombras)
+        const finalV = Math.max(0.12, Math.min(1.0, tgtHsv.v * Math.pow(normShade, 0.78)));
+        // En sombras más oscuras, la saturación se mantiene vívida y del color nuevo
+        const finalS = Math.max(0.35, Math.min(1.0, tgtHsv.s * 0.95));
+        recoloredRgb = hsvToRgb(tgtHsv.h, finalS, finalV);
+      }
+
+      data[i]     = recoloredRgb.r;
+      data[i + 1] = recoloredRgb.g;
+      data[i + 2] = recoloredRgb.b;
+      continue;
     }
 
-    const pixHsv = rgbToHsv(r, g, b);
     const pixChroma = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
-    const origLum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
     // 1. BLINDAJE DE NEUTROS (Fondo blanco, articulaciones y armas)
     if (options.protectNeutrals) {
