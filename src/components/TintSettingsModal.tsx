@@ -55,14 +55,14 @@ export const TintSettingsModal: React.FC<TintSettingsModalProps> = ({
       setProtectNeutrals(initialNeutrals);
       setMaskDataUrl(item.maskDataUrl);
 
-      if (item.sourceColorHex) {
+      if (item.sourceColorHex && item.sourceColorHex.toUpperCase() !== '#00A896') {
         setSourceColor(item.sourceColorHex);
       } else {
-        // Detectar automáticamente
+        // Detectar automáticamente color real
         loadImage(item.sourceImage).then((img) => {
           const detected = detectDominantPlasticColor(img);
           setSourceColor(detected);
-        }).catch(() => setSourceColor('#00A896'));
+        }).catch(() => setSourceColor('#E5E5E5'));
       }
     }
   }, [item]);

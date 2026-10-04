@@ -158,20 +158,24 @@ export const AiSegmentMaskEditor: React.FC<AiSegmentMaskEditorProps> = ({
     const coords = getImageCoords(e);
     if (!coords) return;
 
-    // Si está el cuentagotas activo
-    if (isDropperActive) {
-      const baseCanvas = baseCanvasRef.current;
-      if (!baseCanvas) return;
+    // 1. Tomar muestra inmediata del color exacto donde el usuario hizo clic
+    const baseCanvas = baseCanvasRef.current;
+    if (baseCanvas) {
       const bCtx = baseCanvas.getContext('2d', { willReadFrequently: true });
-      if (!bCtx) return;
-      const pixel = bCtx.getImageData(coords.x, coords.y, 1, 1).data;
-      const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
-      onPickColor(hex);
+      if (bCtx) {
+        const pixel = bCtx.getImageData(coords.x, coords.y, 1, 1).data;
+        const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
+        onPickColor(hex);
+      }
+    }
+
+    // Si solo estaba activo el cuentagotas, terminamos aquí
+    if (isDropperActive) {
       setIsDropperActive(false);
       return;
     }
 
-    // Segmentación IA con 1 clic
+    // 2. Segmentación IA con 1 clic
     if (modelStatus.status !== 'ready' || isSegmenting) return;
 
     setIsSegmenting(true);

@@ -106,14 +106,14 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       setMaskDataUrl(item.maskDataUrl);
       setTintAppliedSuccess(false);
 
-      if (item.sourceColorHex) {
+      if (item.sourceColorHex && item.sourceColorHex.toUpperCase() !== '#00A896') {
         setSourceColor(item.sourceColorHex);
       } else {
-        // Detectar color base
+        // Detectar color base real
         loadImage(baseImg).then((img) => {
           const detected = detectDominantPlasticColor(img);
           setSourceColor(detected);
-        }).catch(() => setSourceColor('#959b2a'));
+        }).catch(() => setSourceColor('#E5E5E5'));
       }
     }
   }, [item, isOpen]);
@@ -701,6 +701,21 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                           <span className="font-mono text-[11px] font-bold text-slate-800 dark:text-slate-200">
                             {sourceColor.toUpperCase()}
                           </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (baseSourceImage) {
+                                loadImage(baseSourceImage).then((img) => {
+                                  const detected = detectDominantPlasticColor(img);
+                                  setSourceColor(detected);
+                                });
+                              }
+                            }}
+                            className="p-1 rounded text-slate-400 hover:text-indigo-600 transition-colors"
+                            title="Auto-detectar color real"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                          </button>
                         </div>
                       </div>
                       <p className="text-[10px] text-slate-500">

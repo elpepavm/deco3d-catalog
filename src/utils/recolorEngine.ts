@@ -154,42 +154,93 @@ export function detectDominantPlasticColor(imageSource: HTMLImageElement | HTMLC
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return '#00A896';
+  if (!ctx) return '#E5E5E5';
 
   ctx.drawImage(imageSource, 0, 0, w, h);
   const data = ctx.getImageData(0, 0, w, h).data;
 
-  const hueBuckets = new Array(36).fill(0);
-  const bucketRgb: { r: number; g: number; b: number; count: number }[] = Array.from({ length: 36 }, () => ({
-    r: 0, g: 0, b: 0, count: 0
-  }));
-
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    const a = data[i + 3];
-
-    if (a < 50) continue;
-
-    const hsv = rgbToHsv(r, g, b);
-    const chroma = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
-
-    // Ignorar fondo blanco
-    if (hsv.v > 0.90 && hsv.s < 0.15) continue;
-    // Ignorar articulaciones oscuras y armas negras
-    if (hsv.v < 0.26 || chroma < 0.20) continue;
-    // Ignorar piel
-    if (isHumanSkin(r, g, b, hsv)) continue;
-
-    const bucketIdx = Math.floor(hsv.h / 10) % 36;
-    hueBuckets[bucketIdx]++;
-    bucketRgb[bucketIdx].r += r;
-    bucketRgb[bucketIdx].g += g;
-    bucketRgb[bucketIdx].b += b;
-    bucketRgb[bucketIdx].count++;
+  // 1. Detectar el color promedio del fondo muestreando el perímetro exterior
+  let bgR = 0, bgG = 0, bgB = 0, bgCount = 0;
+  for (let x = 0; x < w; x++) {
+    const idxTop = (0 * w + x) * 4;
+    const idxBottom = ((h - 1) * w + x) * 4;
+    if (data[idxTop + 3] > 50) {
+      bgR += data[idxTop]; bgG += data[idxTop + 1]; bgB += data[idxTop + 2]; bgCount++;
+    }
+    if (data[idxBottom + 3] > 50) {
+      bgR += data[idxBottom]; bgG += data[idxBottom + 1]; bgB += data[idxBottom + 2]; bgCount++;
+    }
+  }
+  for (let y = 1; y < h - 1; y++) {
+    const idxLeft = (y * w + 0) * 4;
+    const idxRight = (y * w + (w - 1)) * 4;
+    if (data[idxLeft + 3] > 50) {
+      bgR += data[idxLeft]; bgG += data[idxLeft + 1]; bgB += data[idxLeft + 2]; bgCount++;
+    }
+    if (data[idxRight + 3] > 50) {
+      bgR += data[idxRight]; bgG += data[idxRight + 1]; bgB += data[idxRight + 2]; bgCount++;
+    }
   }
 
+  const avgBgR = bgCount > 0 ? bgR / bgCount : 255;
+  const avgBgG = bgCount > 0 ? bgG / bgCount : 255;
+  const avgBgB = bgCount > 0 ? bgB / bgCount : 255;
+
+  // 2. Extraer píxeles del objeto en la zona central diferenciándolos del fondo
+  const hueBuckets = new Array(36).fill(0);
+  const bucketRgb: { r: number; g: number; b: number; count: number }[] = Array.from({ length: 36 }, () => ({
+    r: 0, g: 0, b: 0, count: 0,
+  }));
+
+  let neutralR = 0, neutralG = 0, neutralB = 0, neutralCount = 0;
+  let chromaticCount = 0;
+
+  const startX = Math.floor(w * 0.1);
+  const endX = Math.floor(w * 0.9);
+  const startY = Math.floor(h * 0.1);
+  const endY = Math.floor(h * 0.9);
+
+  for (let y = startY; y < endY; y++) {
+    for (let x = startX; x < endX; x++) {
+      const i = (y * w + x) * 4;
+      const a = data[i + 3];
+      if (a < 50) continue;
+
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+
+      const distToBg = Math.sqrt((r - avgBgR) ** 2 + (g - avgBgG) ** 2 + (b - avgBgB) ** 2);
+      if (distToBg < 20) continue; // Píxel perteneciente al fondo
+
+      const hsv = rgbToHsv(r, g, b);
+
+      if (hsv.s < 0.20) {
+        neutralCount++;
+        neutralR += r;
+        neutralG += g;
+        neutralB += b;
+      } else {
+        chromaticCount++;
+        const bucketIdx = Math.floor(hsv.h / 10) % 36;
+        hueBuckets[bucketIdx]++;
+        bucketRgb[bucketIdx].r += r;
+        bucketRgb[bucketIdx].g += g;
+        bucketRgb[bucketIdx].b += b;
+        bucketRgb[bucketIdx].count++;
+      }
+    }
+  }
+
+  // Si la pieza es mayoritariamente blanca, gris o negra (ej: Llama blanca)
+  if (neutralCount > chromaticCount && neutralCount > 40) {
+    const avgR = Math.round(neutralR / neutralCount);
+    const avgG = Math.round(neutralG / neutralCount);
+    const avgB = Math.round(neutralB / neutralCount);
+    return rgbToHex(avgR, avgG, avgB);
+  }
+
+  // Si la pieza es de color
   let maxCount = 0;
   let bestIdx = -1;
   for (let b = 0; b < 36; b++) {
@@ -206,7 +257,11 @@ export function detectDominantPlasticColor(imageSource: HTMLImageElement | HTMLC
     return rgbToHex(avgR, avgG, avgB);
   }
 
-  return '#00A896';
+  if (neutralCount > 0) {
+    return rgbToHex(Math.round(neutralR / neutralCount), Math.round(neutralG / neutralCount), Math.round(neutralB / neutralCount));
+  }
+
+  return '#E5E5E5';
 }
 
 /**
@@ -290,14 +345,39 @@ export async function recolorImage(
     if (maskData) {
       const maskVal = maskData[i];
       if (maskVal < 30) {
-        // Pixel fuera de la máscara: 100% blindado por la IA (ojos, flor, fondo)
+        // Pixel fuera de la máscara: 100% blindado (fondo exterior)
         continue;
       }
 
-      // Este pixel ES parte del muñeco 3D.
+      // Este pixel está dentro del objeto.
+      // Determinamos si coincide con el material base seleccionado o si es un detalle pintado (cara, ojos, orejas, etc.):
+      const pixChroma = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+      const isSrcNeutral = srcHsv.s < 0.22;
+      let isTargetMaterial = false;
+
+      if (isSrcNeutral) {
+        // El material base a teñir es neutro (ej: lana blanca / plástico gris / negro):
+        // Las facetas y sombras de la pieza tienen baja saturación.
+        // Si el pixel tiene color vivo (cara beige/tostada, mejillas rosas, orejas rosas),
+        // o si es negro profundo de ojos pintados, es un DETALLE PINTADO y debe CONSERVARSE.
+        const isPaintedDetail = (pixHsv.s > 0.25 && pixChroma > 0.16) || (pixHsv.v < 0.20 && srcHsv.v > 0.50);
+        if (!isPaintedDetail) {
+          isTargetMaterial = true;
+        }
+      } else {
+        // El material base a teñir es de color (ej: plástico verde, rojo, azul):
+        const hDist = circularHueDistance(pixHsv.h, srcHsv.h);
+        if (hDist <= maxHueAngle + 12 && pixHsv.s > 0.12) {
+          isTargetMaterial = true;
+        }
+      }
+
+      // Si es un detalle pintado (cara, ojos, orejas, acentos), LO CONSERVAMOS INTACTO:
+      if (!isTargetMaterial) {
+        continue;
+      }
+
       // Fundido natural de sombras al nuevo filamento:
-      // Conservamos la luz y relieve original (origLum) para que se mantenga el volumen 3D,
-      // pero TODO el tono y saturación toman el del nuevo filamento sin dejar manchas verdes residuales.
       const shadeRatio = Math.max(0.04, origLum) / Math.max(0.12, srcLum);
       const normShade = Math.min(1.4, Math.max(0.12, shadeRatio));
 
@@ -316,11 +396,8 @@ export async function recolorImage(
         const neutralV = Math.max(0.08, Math.min(0.96, tgtHsv.v * Math.pow(shadeRatio, 0.85)));
         recoloredRgb = hsvToRgb(tgtHsv.h, tgtHsv.s, neutralV);
       } else {
-        // Filamentos de Color (Fucsia, Rojo, Amarillo, etc.)
-        // Fundido continuo de sombras:
-        // El matiz es 100% el nuevo filamento (cero residuo verde en sombras)
+        // Filamentos de Color (Fucsia, Amarillo, Azul, etc.)
         const finalV = Math.max(0.12, Math.min(1.0, tgtHsv.v * Math.pow(normShade, 0.78)));
-        // En sombras más oscuras, la saturación se mantiene vívida y del color nuevo
         const finalS = Math.max(0.35, Math.min(1.0, tgtHsv.s * 0.95));
         recoloredRgb = hsvToRgb(tgtHsv.h, finalS, finalV);
       }
