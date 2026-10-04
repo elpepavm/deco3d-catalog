@@ -81,6 +81,7 @@ export interface CatalogItem {
   feather?: number;
   protectSkin?: boolean;
   protectNeutrals?: boolean;
+  maskDataUrl?: string; // Máscara de segmentación IA (Segment Anything)
   createdAt: string;
 }
 
@@ -101,5 +102,6 @@ export interface InboxItem {
   feather?: number;
   protectSkin?: boolean;
   protectNeutrals?: boolean;
+  maskDataUrl?: string; // Máscara de segmentación IA (Segment Anything)
 }
 

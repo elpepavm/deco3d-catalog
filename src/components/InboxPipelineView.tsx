@@ -134,6 +134,7 @@ export const InboxPipelineView: React.FC<InboxPipelineViewProps> = ({
           feather: item.feather ?? 15,
           protectSkin: item.protectSkin ?? true,
           protectNeutrals: item.protectNeutrals ?? true,
+          maskDataUrl: item.maskDataUrl,
         });
 
         // Sufijo SKU a partir del nombre del color
@@ -161,6 +162,7 @@ export const InboxPipelineView: React.FC<InboxPipelineViewProps> = ({
           feather: item.feather ?? 15,
           protectSkin: item.protectSkin ?? true,
           protectNeutrals: item.protectNeutrals ?? true,
+          maskDataUrl: item.maskDataUrl,
           images: [
             {
               id: `img-${Date.now()}-1`,

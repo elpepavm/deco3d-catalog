@@ -26,6 +26,7 @@ export interface RecolorOptions {
   neutralThreshold?: number;  // Umbral neutro (default: 0.13)
   protectedColors?: string[]; // Colores específicos congelados mediante el Cuentagotas de Blindaje
   maskCanvas?: HTMLCanvasElement | null;
+  maskDataUrl?: string;       // Máscara de segmentación generada por IA (Segment Anything)
 }
 
 // Conversión HEX a RGB
@@ -250,7 +251,21 @@ export async function recolorImage(
   const minChromaThreshold = srcChroma > 0.28 ? Math.min(0.20, srcChroma * 0.36) : 0.08;
 
   let maskData: Uint8ClampedArray | null = null;
-  if (options.maskCanvas) {
+  if (options.maskDataUrl) {
+    try {
+      const maskImg = await loadImage(options.maskDataUrl);
+      const mCanvas = document.createElement('canvas');
+      mCanvas.width = width;
+      mCanvas.height = height;
+      const mCtx = mCanvas.getContext('2d');
+      if (mCtx) {
+        mCtx.drawImage(maskImg, 0, 0, width, height);
+        maskData = mCtx.getImageData(0, 0, width, height).data;
+      }
+    } catch (err) {
+      console.warn('No se pudo cargar la máscara de IA:', err);
+    }
+  } else if (options.maskCanvas) {
     const maskCtx = options.maskCanvas.getContext('2d');
     if (maskCtx) {
       maskData = maskCtx.getImageData(0, 0, width, height).data;
@@ -268,8 +283,12 @@ export async function recolorImage(
 
     if (a < 10) continue;
 
-    if (maskData && maskData[i + 3] < 10) {
-      continue;
+    // Si hay máscara de IA, la zona fuera de la máscara (maskData < 30) se protege al 100%
+    if (maskData) {
+      const maskVal = maskData[i]; // 255 = pieza, 0 = protegido
+      if (maskVal < 30) {
+        continue;
+      }
     }
 
     const pixHsv = rgbToHsv(r, g, b);

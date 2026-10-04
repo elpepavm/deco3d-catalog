@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CatalogItem, FilamentColor } from '../types';
 import { CATEGORIES, FILAMENT_COLORS } from '../data/filaments';
 import { recolorImage, loadImage, rgbToHex, detectDominantPlasticColor } from '../utils/recolorEngine';
+import { AiSegmentMaskEditor } from './AiSegmentMaskEditor';
 import { 
   X, 
   Save, 
@@ -59,6 +60,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   const [feather, setFeather] = useState<number>(15);
   const [protectSkin, setProtectSkin] = useState<boolean>(true);
   const [protectNeutrals, setProtectNeutrals] = useState<boolean>(true);
+  const [maskDataUrl, setMaskDataUrl] = useState<string | undefined>(undefined);
 
   // Imágenes
   const [currentCoverImage, setCurrentCoverImage] = useState<string>('');
@@ -101,6 +103,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       setFeather(initialFeather);
       setProtectSkin(initialSkin);
       setProtectNeutrals(initialNeutrals);
+      setMaskDataUrl(item.maskDataUrl);
       setTintAppliedSuccess(false);
 
       if (item.sourceColorHex) {
@@ -169,6 +172,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
           feather,
           protectSkin,
           protectNeutrals,
+          maskDataUrl,
         });
 
         if (!isCancelled) {
@@ -187,7 +191,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [baseSourceImage, isOpen, sourceColor, colorHex, tolerance, feather, protectSkin, protectNeutrals]);
+  }, [baseSourceImage, isOpen, sourceColor, colorHex, tolerance, feather, protectSkin, protectNeutrals, maskDataUrl]);
 
   if (!isOpen || !item) return null;
 
@@ -243,6 +247,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         feather,
         protectSkin,
         protectNeutrals,
+        maskDataUrl,
       });
 
       setCurrentCoverImage(highResRecolor);
@@ -297,6 +302,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       feather,
       protectSkin,
       protectNeutrals,
+      maskDataUrl,
     };
 
     onSave(updated);
@@ -614,63 +620,31 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 </label>
               </div>
 
-              {/* Sección 2: Calibración y Corrección de Tinción de la Foto */}
+              {/* Sección 2: Calibración y Segmentación IA */}
               <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center justify-between">
                   <div>
                     <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                      <SlidersHorizontal className="w-4 h-4 text-amber-500" />
-                      Calibrador y Corrector de Foto en Tiempo Real
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      Segmentación con IA (Meta SAM) & Corrección de Tinción
                     </span>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Corregí halos, biseles, articulaciones o cambiá la tinción si encontrás fallas visuales.
+                      Hacé 1 clic sobre el cuerpo de la figura para aislarla automáticamente sin tocar los ojos ni la flor.
                     </p>
                   </div>
-
-                  {/* Botón Cuentagotas */}
-                  <button
-                    type="button"
-                    onClick={() => setIsEyedropperActive(!isEyedropperActive)}
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      isEyedropperActive
-                        ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-400 animate-pulse'
-                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    <Pipette className="w-3.5 h-3.5" />
-                    <span>{isEyedropperActive ? 'Hacé clic en la foto' : 'Cuentagotas Base'}</span>
-                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Visor de Previsualización */}
+                  {/* Visor de Previsualización con AiSegmentMaskEditor */}
                   <div className="space-y-2 flex flex-col">
-                    <div className="relative aspect-square bg-slate-900 rounded-xl overflow-hidden border border-slate-700 flex items-center justify-center">
-                      <canvas
-                        ref={canvasRef}
-                        onClick={handleCanvasClick}
-                        className={`max-w-full max-h-full object-contain ${
-                          isEyedropperActive ? 'cursor-crosshair block' : 'hidden'
-                        }`}
-                      />
-
-                      {!isEyedropperActive && (previewDataUrl || currentCoverImage) && (
-                        <img
-                          src={previewDataUrl || currentCoverImage}
-                          alt="Previsualización"
-                          className="max-w-full max-h-full object-contain"
-                        />
-                      )}
-
-                      {isProcessingPreview && (
-                        <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px] flex items-center justify-center">
-                          <div className="p-2 bg-slate-900/90 text-white rounded-xl shadow-lg flex items-center space-x-2 text-xs font-semibold">
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />
-                            <span>Calculando tinción...</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <AiSegmentMaskEditor
+                      imageSrc={baseSourceImage}
+                      previewSrc={previewDataUrl || currentCoverImage}
+                      maskDataUrl={maskDataUrl}
+                      onMaskChange={(newMask) => setMaskDataUrl(newMask)}
+                      onPickColor={(hex) => setSourceColor(hex)}
+                      isProcessing={isProcessingPreview}
+                    />
 
                     {/* Botones de Aplicación */}
                     <div className="flex flex-wrap items-center gap-2 pt-1">
