@@ -54,6 +54,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ items }) => {
       'condition',
       'price',
       'sale_price',
+      'sale_price_effective_date',
       'link',
       'image_link',
       'brand',
@@ -64,9 +65,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({ items }) => {
       'additional_image_link'
     ];
 
+    const currentYear = new Date().getFullYear();
+    const defaultEffectiveDate = `${currentYear}-01-01T00:00:00-03:00/${currentYear}-12-31T23:59:59-03:00`;
+
     const rows = items.map((item) => {
       const priceFormatted = `${item.price} ${currency}`;
-      const salePriceFormatted = item.salePrice && item.salePrice > 0 ? `${item.salePrice} ${currency}` : '';
+      const hasSale = item.salePrice && item.salePrice > 0 && item.salePrice < item.price;
+      const salePriceFormatted = hasSale ? `${item.salePrice} ${currency}` : '';
+      const saleDateFormatted = hasSale ? defaultEffectiveDate : '';
       const cleanDesc = item.description.replace(/(\r\n|\n|\r)/gm, ' ').replace(/"/g, '""');
       const cleanTitle = item.title.replace(/"/g, '""');
       const availability = item.inStock ? 'in stock' : 'out of stock';
@@ -100,6 +106,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ items }) => {
         `"new"`,
         `"${priceFormatted}"`,
         `"${salePriceFormatted}"`,
+        `"${saleDateFormatted}"`,
         `"${link}"`,
         `"${imageLink}"`,
         `"${brandName}"`,

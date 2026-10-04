@@ -5,7 +5,7 @@
       "headers": [
         { "key": "Content-Type", "value": "text/csv; charset=utf-8" },
         { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=300" }
+        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=120, stale-while-revalidate=60" }
       ]
     },
     {
@@ -13,17 +13,29 @@
       "headers": [
         { "key": "Content-Type", "value": "text/csv; charset=utf-8" },
         { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=300" }
+        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=120, stale-while-revalidate=60" }
+      ]
+    },
+    {
+      "source": "/api/catalog",
+      "headers": [
+        { "key": "Content-Type", "value": "text/csv; charset=utf-8" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=120, stale-while-revalidate=60" }
       ]
     }
   ],
   "rewrites": [
     {
-      "source": "/api/catalog.csv",
-      "destination": "/catalog.csv"
+      "source": "/catalog.csv",
+      "destination": "/api/catalog"
     },
     {
-      "source": "/((?!catalog\\.csv|api/catalog\\.csv).*)",
+      "source": "/api/catalog.csv",
+      "destination": "/api/catalog"
+    },
+    {
+      "source": "/((?!catalog\\.csv|api/catalog\\.csv|api/catalog).*)",
       "destination": "/index.html"
     }
   ]
