@@ -339,16 +339,13 @@ export async function recolorImage(
       if (pixHsv.v > 0.90 && pixHsv.s < 0.14) {
         continue;
       }
-      // Articulaciones negras profundas y uniones oscuras
-      if (pixHsv.v < 0.22 && pixChroma < 0.20) {
+      // Accesorios o uniones verdaderamente negras neutras (croma casi nulo y que no comparten el matiz del objeto)
+      const hDistToSrc = circularHueDistance(pixHsv.h, srcHsv.h);
+      if (pixHsv.v < 0.20 && pixChroma < 0.08 && hDistToSrc > 35) {
         continue;
       }
-      // Armas negras, cuchillos y detalles con croma bajo
-      if (pixChroma < minChromaThreshold && pixHsv.v < 0.88) {
-        continue;
-      }
-      // Piezas neutras cuando la base es de color vivo
-      if (srcChroma > 0.26 && (pixChroma < minChromaThreshold || pixHsv.s < 0.16)) {
+      // Detalles neutros con croma casi nulo
+      if (pixChroma < 0.06 && pixHsv.v < 0.85 && hDistToSrc > 40) {
         continue;
       }
     }

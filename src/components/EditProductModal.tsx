@@ -629,7 +629,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                       Segmentación con IA (Meta SAM) & Corrección de Tinción
                     </span>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Hacé 1 clic sobre el cuerpo de la figura para aislarla automáticamente sin tocar los ojos ni la flor.
+                      Hacé 1 clic sobre la pieza o componente que querés teñir para aislarla automáticamente protegiendo fondo y detalles.
                     </p>
                   </div>
                 </div>

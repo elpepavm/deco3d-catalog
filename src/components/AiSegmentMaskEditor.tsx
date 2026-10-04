@@ -342,10 +342,10 @@ export const AiSegmentMaskEditor: React.FC<AiSegmentMaskEditorProps> = ({
           <MousePointerClick className="w-3.5 h-3.5 text-indigo-500" />
           {maskDataUrl ? (
             <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-              Pieza segmentada sin tocar ojos ni flor. Podés hacer clic en otra parte para sumarla.
+              Pieza aislada por IA con protección de detalles y fondo. Podés hacer clic en otra parte para sumarla.
             </span>
           ) : (
-            'Hacé un clic en la cabeza o cuerpo. La IA recortará el objeto automáticamente.'
+            'Hacé 1 clic sobre la pieza o componente que querés teñir. La IA la aislará automáticamente.'
           )}
         </span>
 
