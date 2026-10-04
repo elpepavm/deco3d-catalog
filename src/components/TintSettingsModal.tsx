@@ -41,6 +41,7 @@ export const TintSettingsModal: React.FC<TintSettingsModalProps> = ({
   const [isEyedropperActive, setIsEyedropperActive] = useState<boolean>(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const previewImgRef = useRef<HTMLCanvasElement | null>(null);
   const [canvasDimensions, setCanvasDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
   // Cargar datos del item
@@ -68,25 +69,46 @@ export const TintSettingsModal: React.FC<TintSettingsModalProps> = ({
     }
   }, [item]);
 
-  // Dibujar imagen original en el canvas para cuentagotas y previsualización
+  // Dibujar imagen original en canvas de alta resolución (para cuentagotas) y en canvas optimizado (para preview en tiempo real)
   useEffect(() => {
     if (!item || !isOpen) return;
 
     loadImage(item.sourceImage).then((img) => {
       const canvas = canvasRef.current;
-      if (!canvas) return;
-      canvas.width = img.width;
-      canvas.height = img.height;
-      setCanvasDimensions({ width: img.width, height: img.height });
-
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(img, 0, 0);
+      if (canvas) {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        setCanvasDimensions({ width: img.width, height: img.height });
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.drawImage(img, 0, 0);
       }
+
+      // Canvas optimizado para previsualización a 60fps (máx 520px)
+      const maxDim = 520;
+      let w = img.width;
+      let h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        } else {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+      }
+
+      const pCanvas = document.createElement('canvas');
+      pCanvas.width = w;
+      pCanvas.height = h;
+      const pCtx = pCanvas.getContext('2d');
+      if (pCtx) {
+        pCtx.drawImage(img, 0, 0, w, h);
+      }
+      previewImgRef.current = pCanvas;
     });
   }, [item, isOpen]);
 
-  // Generar previsualización cuando cambian los parámetros
+  // Generar previsualización ultrarrápida cuando cambian los parámetros
   useEffect(() => {
     if (!item || !isOpen || !sourceColor) return;
 
@@ -95,8 +117,8 @@ export const TintSettingsModal: React.FC<TintSettingsModalProps> = ({
 
     const timer = setTimeout(async () => {
       try {
-        const img = await loadImage(item.sourceImage);
-        const result = await recolorImage(img, {
+        const sourceForPreview = previewImgRef.current || (await loadImage(item.sourceImage));
+        const result = await recolorImage(sourceForPreview, {
           sourceColorHex: sourceColor,
           targetColorHex: testFilament.hex,
           tolerance,
@@ -115,7 +137,7 @@ export const TintSettingsModal: React.FC<TintSettingsModalProps> = ({
           setIsProcessingPreview(false);
         }
       }
-    }, 180);
+    }, 40); // 40ms: respuesta fluida inmediata en tiempo real
 
     return () => {
       isCancelled = true;
@@ -318,8 +340,8 @@ export const TintSettingsModal: React.FC<TintSettingsModalProps> = ({
               </div>
               <input
                 type="range"
-                min="15"
-                max="80"
+                min="5"
+                max="90"
                 value={tolerance}
                 onChange={(e) => setTolerance(Number(e.target.value))}
                 className="w-full accent-indigo-600 cursor-pointer"

@@ -121,22 +121,26 @@ export function colorDistanceRgb(r1: number, g1: number, b1: number, r2: number,
 }
 
 /**
- * Detección de piel humana biológica (manos y dedos).
+ * Detección de piel humana biológica (manos, dedos y palmas).
+ * Calibrado para luz de estudio, luz cálida de tungsteno, luz LED y sombras naturales.
  */
 export function isHumanSkin(r: number, g: number, b: number, hsv?: { h: number; s: number; v: number }): boolean {
   const currHsv = hsv || rgbToHsv(r, g, b);
 
-  const isWarmSkinHue = (currHsv.h >= 0 && currHsv.h <= 38) || (currHsv.h >= 345 && currHsv.h <= 360);
+  // Rango de tono de piel humana (340° a 45°)
+  const isWarmSkinHue = (currHsv.h >= 0 && currHsv.h <= 45) || (currHsv.h >= 340 && currHsv.h <= 360);
   if (!isWarmSkinHue) return false;
 
-  if (currHsv.s < 0.12 || currHsv.s > 0.72) return false;
-  if (currHsv.v < 0.22 || currHsv.v > 0.98) return false;
+  // Saturación y brillo de piel real (evita blancos quemados y negros profundos)
+  if (currHsv.s < 0.10 || currHsv.s > 0.78) return false;
+  if (currHsv.v < 0.18 || currHsv.v > 0.98) return false;
 
+  // Rango de crominancia YCbCr estándar para piel humana
   const y  =  0.299 * r + 0.587 * g + 0.114 * b;
   const cb = -0.168736 * r - 0.331264 * g + 0.5 * b + 128;
   const cr =  0.5 * r - 0.418688 * g - 0.081312 * b + 128;
 
-  return cb >= 77 && cb <= 133 && cr >= 130 && cr <= 175 && y >= 35 && y <= 245;
+  return cb >= 72 && cb <= 138 && cr >= 128 && cr <= 182 && y >= 30 && y <= 250;
 }
 
 /**
@@ -233,9 +237,9 @@ export async function recolorImage(
   const tgtRgb = hexToRgb(options.targetColorHex);
   const tgtHsv = rgbToHsv(tgtRgb.r, tgtRgb.g, tgtRgb.b);
 
-  // Rango angular amplio para atrapar 100% de la pieza en luces, biseles y sombras profundas
-  const maxHueAngle = 40 + (options.tolerance / 100) * 58; // 40° a 98° de tolerancia
-  const featherAngle = Math.max(8, (options.feather / 100) * 28);
+  // Rango angular dinámico y sensible para reflejar cambios inmediatos en el slider
+  const maxHueAngle = 6 + (options.tolerance / 100) * 70; // 6° (muy estricto) a 76° (muy amplio)
+  const featherAngle = Math.max(0.5, (options.feather / 100) * 32); // 0.5° (borde duro) a 32° (borde difuso)
 
   const isSourceSkin = isHumanSkin(srcRgb.r, srcRgb.g, srcRgb.b, srcHsv);
 
@@ -275,28 +279,36 @@ export async function recolorImage(
     // 1. BLINDAJE DE NEUTROS (Fondo blanco, articulaciones y armas)
     if (options.protectNeutrals) {
       // Fondo blanco de estudio puro
-      if (pixHsv.v > 0.92 && pixHsv.s < 0.12) {
+      if (pixHsv.v > 0.90 && pixHsv.s < 0.14) {
         continue;
       }
-      // Articulaciones negras profundas
-      if (pixHsv.v < 0.20) {
+      // Articulaciones negras profundas y uniones oscuras
+      if (pixHsv.v < 0.22 && pixChroma < 0.20) {
         continue;
       }
-      // Armas negras y cuchillos con croma bajo
+      // Armas negras, cuchillos y detalles con croma bajo
       if (pixChroma < minChromaThreshold && pixHsv.v < 0.88) {
         continue;
       }
-    }
-
-    // Piezas neutras cuando la base es de color vivo
-    if (srcChroma > 0.28 && (pixChroma < minChromaThreshold || pixHsv.s < 0.16)) {
-      continue;
-    }
-
-    // 2. BLINDAJE DE PIEL HUMANA
-    if (options.protectSkin && !isSourceSkin) {
-      if (isHumanSkin(r, g, b, pixHsv)) {
+      // Piezas neutras cuando la base es de color vivo
+      if (srcChroma > 0.26 && (pixChroma < minChromaThreshold || pixHsv.s < 0.16)) {
         continue;
+      }
+    }
+
+    // 2. BLINDAJE DE PIEL HUMANA (Manos, dedos y palmas en fotos sosteniendo el modelo)
+    if (options.protectSkin) {
+      if (isHumanSkin(r, g, b, pixHsv)) {
+        if (isSourceSkin) {
+          // Si el plástico base también es cálido (ej: rojo/naranja),
+          // distinguimos la piel por tener menor saturación o mayor desviación angular
+          const distToSrc = circularHueDistance(pixHsv.h, srcHsv.h);
+          if (distToSrc > 10 || pixHsv.s < srcHsv.s * 0.70) {
+            continue;
+          }
+        } else {
+          continue;
+        }
       }
     }
 
