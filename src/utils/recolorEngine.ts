@@ -329,6 +329,24 @@ export async function recolorImage(
 
   const srcLum = (0.299 * srcRgb.r + 0.587 * srcRgb.g + 0.114 * srcRgb.b) / 255;
 
+  // Muestrear perímetro exterior para blindaje absoluto del fondo de estudio
+  let bgR = 0, bgG = 0, bgB = 0, bgCount = 0;
+  for (let x = 0; x < width; x += 4) {
+    const idxT = x * 4;
+    const idxB = ((height - 1) * width + x) * 4;
+    if (data[idxT + 3] > 50) { bgR += data[idxT]; bgG += data[idxT + 1]; bgB += data[idxT + 2]; bgCount++; }
+    if (data[idxB + 3] > 50) { bgR += data[idxB]; bgG += data[idxB + 1]; bgB += data[idxB + 2]; bgCount++; }
+  }
+  for (let y = 0; y < height; y += 4) {
+    const idxL = (y * width) * 4;
+    const idxR = (y * width + (width - 1)) * 4;
+    if (data[idxL + 3] > 50) { bgR += data[idxL]; bgG += data[idxL + 1]; bgB += data[idxL + 2]; bgCount++; }
+    if (data[idxR + 3] > 50) { bgR += data[idxR]; bgG += data[idxR + 1]; bgB += data[idxR + 2]; bgCount++; }
+  }
+  const avgBgR = bgCount > 0 ? bgR / bgCount : 255;
+  const avgBgG = bgCount > 0 ? bgG / bgCount : 255;
+  const avgBgB = bgCount > 0 ? bgB / bgCount : 255;
+
   const len = data.length;
   for (let i = 0; i < len; i += 4) {
     const r = data[i];
@@ -340,39 +358,63 @@ export async function recolorImage(
 
     const origLum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     const pixHsv = rgbToHsv(r, g, b);
+    const pixChroma = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+
+    // BLINDAJE DEL FONDO DE ESTUDIO (Elimina el desbordado y "resplandor amarillo supersaiyajin"):
+    const distToBg = Math.sqrt((r - avgBgR) ** 2 + (g - avgBgG) ** 2 + (b - avgBgB) ** 2);
+    const isBgPixel = distToBg < 18 && pixHsv.v > 0.92;
+    if (isBgPixel) {
+      continue;
+    }
+
+    // BLINDAJE DE NEGROS PROFUNDOS (Ojos, pupilas, hocicos negros, articulaciones):
+    const isBlackFeature = pixHsv.v < 0.24 && pixChroma < 0.15;
+    if (isBlackFeature && tgtHsv.v > 0.30) {
+      continue;
+    }
 
     // CASO A: CUANDO HAY MÁSCARA DE IA ACTIVA (Segment Anything)
     if (maskData) {
       const maskVal = maskData[i];
-      if (maskVal < 30) {
+      if (maskVal < 90) {
         // Pixel fuera de la máscara: 100% blindado (fondo exterior)
         continue;
       }
 
       // Este pixel está dentro del objeto.
-      // Determinamos si coincide con el material base seleccionado o si es un detalle pintado (cara, ojos, orejas, etc.):
-      const pixChroma = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+      // Determinamos si coincide con el material base seleccionado o si es un detalle pintado (cara, ojos, etc.):
       const isSrcNeutral = srcHsv.s < 0.22;
       let isTargetMaterial = false;
 
       if (isSrcNeutral) {
-        // El material base a teñir es neutro (ej: lana blanca / plástico gris / negro):
-        // Las facetas y sombras de la pieza tienen baja saturación.
+        // El material base a teñir es neutro (ej: lana blanca de la llama / plástico gris / negro):
+        // La lana tiene baja saturación cromática.
         // Si el pixel tiene color vivo (cara beige/tostada, mejillas rosas, orejas rosas),
-        // o si es negro profundo de ojos pintados, es un DETALLE PINTADO y debe CONSERVARSE.
-        const isPaintedDetail = (pixHsv.s > 0.25 && pixChroma > 0.16) || (pixHsv.v < 0.20 && srcHsv.v > 0.50);
+        // o si es negro de ojos pintados, es un DETALLE PINTADO y debe CONSERVARSE.
+        const isPaintedDetail = (pixHsv.s > 0.24 && pixChroma > 0.15) || (pixHsv.v < 0.24 && srcHsv.v > 0.50);
         if (!isPaintedDetail) {
           isTargetMaterial = true;
         }
       } else {
-        // El material base a teñir es de color (ej: plástico verde, rojo, azul):
+        // El material base a teñir es de color (ej: carpincho marrón, dino turquesa, etc.):
         const hDist = circularHueDistance(pixHsv.h, srcHsv.h);
-        if (hDist <= maxHueAngle + 12 && pixHsv.s > 0.12) {
-          isTargetMaterial = true;
+        if (srcHsv.s < 0.38) {
+          // Filamento de saturación media/tierra (marrón, arena, bronce, marfil):
+          // En los brillos de capa sobre el lomo curvo, la saturación disminuye.
+          const isHighlight = pixHsv.v > 0.45 && pixHsv.s < 0.22 && !isBgPixel;
+          if (hDist <= maxHueAngle + 18 || isHighlight) {
+            isTargetMaterial = true;
+          }
+        } else {
+          // Filamento de color vivo (turquesa, azul, verde, etc.):
+          // La esclerótica blanca del ojo (s < 0.15) debe mantenerse blanca y no teñirse.
+          if (hDist <= maxHueAngle + 12 && pixHsv.s > 0.16) {
+            isTargetMaterial = true;
+          }
         }
       }
 
-      // Si es un detalle pintado (cara, ojos, orejas, acentos), LO CONSERVAMOS INTACTO:
+      // Si es un detalle pintado (cara tostada, ojos, orejas), LO CONSERVAMOS INTACTO:
       if (!isTargetMaterial) {
         continue;
       }
@@ -402,13 +444,13 @@ export async function recolorImage(
         recoloredRgb = hsvToRgb(tgtHsv.h, finalS, finalV);
       }
 
-      data[i]     = recoloredRgb.r;
-      data[i + 1] = recoloredRgb.g;
-      data[i + 2] = recoloredRgb.b;
+      // Mezcla suave con antialiasing en los bordes para cero halo exterior:
+      const maskAlpha = maskVal >= 210 ? 1.0 : (maskVal - 90) / 120;
+      data[i]     = Math.round(r * (1 - maskAlpha) + recoloredRgb.r * maskAlpha);
+      data[i + 1] = Math.round(g * (1 - maskAlpha) + recoloredRgb.g * maskAlpha);
+      data[i + 2] = Math.round(b * (1 - maskAlpha) + recoloredRgb.b * maskAlpha);
       continue;
     }
-
-    const pixChroma = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
 
     // 1. BLINDAJE DE NEUTROS (Fondo blanco, articulaciones y armas)
     if (options.protectNeutrals) {
@@ -459,10 +501,18 @@ export async function recolorImage(
       }
     }
 
+    // En piezas de color vivo (ej: dinosaurio), la esclerótica blanca del ojo nunca debe teñirse
+    if (srcHsv.s > 0.35 && pixHsv.s < 0.15 && pixHsv.v > 0.65) {
+      continue;
+    }
+
     // 3. COINCIDENCIA POR ÁNGULO DE MATIZ
     const hDist = circularHueDistance(pixHsv.h, srcHsv.h);
 
-    if (hDist > maxHueAngle + featherAngle) {
+    // En piezas con filamento medio/tierra (ej: carpincho), incluir brillos especulares de capa
+    const isCarpHighlight = srcHsv.s < 0.38 && pixHsv.v > 0.45 && pixHsv.s < 0.22 && !isBgPixel;
+
+    if (hDist > maxHueAngle + featherAngle && !isCarpHighlight) {
       // Píxel fuera del rango. Si está en la zona de borde exterior con residuo de color original,
       // desaturamos su tinte para evitar halos cyan/aqua sobre fondos oscuros o bordes.
       if (hDist < maxHueAngle + featherAngle * 1.8 && pixChroma > 0.08) {
