@@ -75,6 +75,12 @@ export interface CatalogItem {
   handImage?: string;
   images: CatalogImageItem[]; // Lista completa de fotos (hasta 10 fotos por producto)
   status?: 'draft' | 'published'; // draft = en revisión (no va a Meta), published = en catálogo activo
+  sourceImage?: string; // Foto base original sin teñir (para re-teñir o ajustar en cualquier momento)
+  sourceColorHex?: string;
+  tolerance?: number;
+  feather?: number;
+  protectSkin?: boolean;
+  protectNeutrals?: boolean;
   createdAt: string;
 }
 

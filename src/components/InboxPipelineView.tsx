@@ -155,6 +155,12 @@ export const InboxPipelineView: React.FC<InboxPipelineViewProps> = ({
           description: `${item.description} Color: ${filament.name}.`,
           dimensions: item.dimensions || '14 cm',
           coverImage: recoloredDataUrl,
+          sourceImage: item.sourceImage,
+          sourceColorHex: item.sourceColorHex || detectedColor,
+          tolerance: item.tolerance ?? 45,
+          feather: item.feather ?? 15,
+          protectSkin: item.protectSkin ?? true,
+          protectNeutrals: item.protectNeutrals ?? true,
           images: [
             {
               id: `img-${Date.now()}-1`,
