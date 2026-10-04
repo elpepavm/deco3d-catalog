@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CatalogItem } from '../types';
 import { EditProductModal } from './EditProductModal';
 import { BatchEditModal, BatchEditUpdates } from './BatchEditModal';
+import { ImageZoomLightbox } from './ImageZoomLightbox';
 import { 
   CheckCircle2, 
   Trash2, 
@@ -17,7 +18,8 @@ import {
   SlidersHorizontal,
   X,
   LayoutGrid,
-  Grid2X2
+  Grid2X2,
+  Maximize2
 } from 'lucide-react';
 
 interface ReviewPipelineViewProps {
@@ -47,6 +49,7 @@ export const ReviewPipelineView: React.FC<ReviewPipelineViewProps> = ({
 }) => {
   const [search, setSearch] = useState('');
   const [editingItem, setEditingItem] = useState<CatalogItem | null>(null);
+  const [lightboxItem, setLightboxItem] = useState<{ imageUrl: string; title: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
 
@@ -349,12 +352,23 @@ export const ReviewPipelineView: React.FC<ReviewPipelineViewProps> = ({
                     </div>
 
                     {/* Imagen del Borrador */}
-                    <div className="aspect-square bg-slate-100 dark:bg-slate-950 relative overflow-hidden flex items-center justify-center">
+                    <div 
+                      onClick={() => setLightboxItem({ imageUrl: item.coverImage, title: item.title })}
+                      className="aspect-square bg-slate-100 dark:bg-slate-950 relative overflow-hidden flex items-center justify-center cursor-pointer group/img"
+                      title="Clic para expandir imagen"
+                    >
                       <img
                         src={item.coverImage}
                         alt={item.title}
                         className="w-full h-full object-contain p-1.5 group-hover:scale-105 transition-transform duration-300"
                       />
+
+                      {/* Icono de zoom en hover */}
+                      <div className="absolute inset-0 bg-slate-950/0 group-hover/img:bg-slate-950/15 transition-colors flex items-center justify-center pointer-events-none">
+                        <span className="opacity-0 group-hover/img:opacity-100 transition-opacity p-1.5 rounded-full bg-slate-900/80 text-white backdrop-blur-xs shadow-md">
+                          <Maximize2 className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
 
                       {/* Dot de Color */}
                       <div className="absolute top-1.5 left-1.5 flex items-center space-x-1 px-1.5 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-md text-white text-[10px] font-semibold z-10">
@@ -465,12 +479,24 @@ export const ReviewPipelineView: React.FC<ReviewPipelineViewProps> = ({
 
                     {/* Imagen del Borrador */}
                     <div>
-                      <div className="aspect-square bg-slate-100 dark:bg-slate-950 relative overflow-hidden flex items-center justify-center">
+                      <div 
+                        onClick={() => setLightboxItem({ imageUrl: item.coverImage, title: item.title })}
+                        className="aspect-square bg-slate-100 dark:bg-slate-950 relative overflow-hidden flex items-center justify-center cursor-pointer group/img"
+                        title="Clic para expandir y ver en detalle"
+                      >
                         <img
                           src={item.coverImage}
                           alt={item.title}
                           className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                         />
+
+                        {/* Overlay para indicar zoom */}
+                        <div className="absolute inset-0 bg-slate-950/0 group-hover/img:bg-slate-950/15 transition-colors flex items-center justify-center pointer-events-none">
+                          <span className="opacity-0 group-hover/img:opacity-100 transition-opacity p-2 rounded-xl bg-slate-900/80 text-white backdrop-blur-xs shadow-lg flex items-center gap-1.5 text-xs font-semibold">
+                            <Maximize2 className="w-4 h-4" />
+                            <span>Ver detalle</span>
+                          </span>
+                        </div>
 
                         {/* Chip de Color */}
                         <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5 bg-slate-900/85 backdrop-blur-md px-2.5 py-1 rounded-lg text-white text-[11px] font-semibold shadow-sm z-10">
@@ -594,6 +620,14 @@ export const ReviewPipelineView: React.FC<ReviewPipelineViewProps> = ({
         selectedCount={selectedIds.length}
         onClose={() => setIsBatchModalOpen(false)}
         onApply={handleApplyBatchUpdates}
+      />
+
+      {/* Lightbox para expandir imagen con zoom y detalle */}
+      <ImageZoomLightbox
+        isOpen={!!lightboxItem}
+        imageUrl={lightboxItem?.imageUrl || ''}
+        title={lightboxItem?.title || ''}
+        onClose={() => setLightboxItem(null)}
       />
     </div>
   );

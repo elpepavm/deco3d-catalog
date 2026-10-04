@@ -3,6 +3,7 @@ import { InboxItem, FilamentColor, CatalogItem } from '../types';
 import { FILAMENT_COLORS, CATEGORIES } from '../data/filaments';
 import { recolorImage, loadImage, detectDominantPlasticColor } from '../utils/recolorEngine';
 import { TintSettingsModal } from './TintSettingsModal';
+import { ImageZoomLightbox } from './ImageZoomLightbox';
 import { 
   Upload, 
   Trash2, 
@@ -10,11 +11,12 @@ import {
   Layers, 
   Check, 
   Plus, 
-  Info,
-  Palette,
-  Loader2,
-  Tag,
-  SlidersHorizontal
+  Info, 
+  Palette, 
+  Loader2, 
+  Tag, 
+  SlidersHorizontal,
+  Maximize2
 } from 'lucide-react';
 
 interface InboxPipelineViewProps {
@@ -36,6 +38,7 @@ export const InboxPipelineView: React.FC<InboxPipelineViewProps> = ({
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [progressText, setProgressText] = useState<string>('');
   const [tintSettingsItem, setTintSettingsItem] = useState<InboxItem | null>(null);
+  const [lightboxItem, setLightboxItem] = useState<{ imageUrl: string; title: string } | null>(null);
 
   const presetCategories = CATEGORIES.filter((c) => c !== 'Todos');
 
@@ -250,13 +253,26 @@ export const InboxPipelineView: React.FC<InboxPipelineViewProps> = ({
                 >
                   {/* Foto Base del Modelo */}
                   <div className="w-full lg:w-56 shrink-0 flex flex-col">
-                    <div className="w-full aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 relative">
+                    <div 
+                      onClick={() => setLightboxItem({ imageUrl: item.sourceImage, title: item.title })}
+                      className="w-full aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 relative cursor-pointer group/img"
+                      title="Clic para expandir y ver foto original en detalle"
+                    >
                       <img
                         src={item.sourceImage}
                         alt={item.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
                       />
-                      <span className="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-md">
+
+                      {/* Icono de zoom en hover */}
+                      <div className="absolute inset-0 bg-slate-950/0 group-hover/img:bg-slate-950/20 transition-colors flex items-center justify-center pointer-events-none">
+                        <span className="opacity-0 group-hover/img:opacity-100 transition-opacity p-2 rounded-xl bg-slate-900/80 text-white backdrop-blur-xs shadow-lg flex items-center gap-1 text-xs font-semibold">
+                          <Maximize2 className="w-3.5 h-3.5" />
+                          <span>Expandir</span>
+                        </span>
+                      </div>
+
+                      <span className="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-md z-10">
                         Foto Base
                       </span>
                     </div>
@@ -482,6 +498,14 @@ export const InboxPipelineView: React.FC<InboxPipelineViewProps> = ({
           onUpdateInboxItem(updated);
           setTintSettingsItem(null);
         }}
+      />
+
+      {/* Lightbox para expandir foto base con zoom y detalle */}
+      <ImageZoomLightbox
+        isOpen={!!lightboxItem}
+        imageUrl={lightboxItem?.imageUrl || ''}
+        title={lightboxItem?.title || ''}
+        onClose={() => setLightboxItem(null)}
       />
     </div>
   );

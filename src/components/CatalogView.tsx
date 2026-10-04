@@ -3,6 +3,7 @@ import { CatalogItem } from '../types';
 import { CATEGORIES } from '../data/filaments';
 import { EditProductModal } from './EditProductModal';
 import { BatchEditModal, BatchEditUpdates } from './BatchEditModal';
+import { ImageZoomLightbox } from './ImageZoomLightbox';
 import { 
   Search, 
   Check, 
@@ -23,7 +24,8 @@ import {
   PackageCheck,
   PackageX,
   LayoutGrid,
-  Grid2X2
+  Grid2X2,
+  Maximize2
 } from 'lucide-react';
 
 interface CatalogViewProps {
@@ -52,6 +54,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   const [stockFilter, setStockFilter] = useState<'all' | 'inStock' | 'outOfStock'>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<CatalogItem | null>(null);
+  const [lightboxItem, setLightboxItem] = useState<{ imageUrl: string; title: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
 
@@ -455,12 +458,23 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                 </div>
 
                 {/* Contenedor de Imagen */}
-                <div className="relative aspect-square bg-slate-50 dark:bg-slate-950 flex items-center justify-center overflow-hidden border-b border-slate-100 dark:border-slate-800/80">
+                <div 
+                  onClick={() => setLightboxItem({ imageUrl: currentPhoto.url, title: item.title })}
+                  className="relative aspect-square bg-slate-50 dark:bg-slate-950 flex items-center justify-center overflow-hidden border-b border-slate-100 dark:border-slate-800/80 cursor-pointer group/img"
+                  title="Clic para expandir imagen"
+                >
                   <img
                     src={currentPhoto.url}
                     alt={item.title}
                     className="w-full h-full object-contain p-1.5 group-hover:scale-105 transition-transform duration-300"
                   />
+
+                  {/* Icono de zoom en hover */}
+                  <div className="absolute inset-0 bg-slate-950/0 group-hover/img:bg-slate-950/15 transition-colors flex items-center justify-center pointer-events-none">
+                    <span className="opacity-0 group-hover/img:opacity-100 transition-opacity p-1.5 rounded-full bg-slate-900/80 text-white backdrop-blur-xs shadow-md">
+                      <Maximize2 className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
 
                   {/* Dot de Color */}
                   <div className="absolute top-1.5 left-1.5 flex items-center space-x-1 px-1.5 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-md text-white text-[10px] font-semibold z-10">
@@ -600,12 +614,24 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                 </div>
 
                 {/* Contenedor de Imagen y Galería */}
-                <div className="relative aspect-square bg-slate-50 dark:bg-slate-950 flex items-center justify-center overflow-hidden border-b border-slate-100 dark:border-slate-800/80">
+                <div 
+                  onClick={() => setLightboxItem({ imageUrl: currentPhoto.url, title: item.title })}
+                  className="relative aspect-square bg-slate-50 dark:bg-slate-950 flex items-center justify-center overflow-hidden border-b border-slate-100 dark:border-slate-800/80 cursor-pointer group/img"
+                  title="Clic para expandir y ver en detalle"
+                >
                   <img
                     src={currentPhoto.url}
                     alt={item.title}
                     className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                   />
+
+                  {/* Overlay con lupa para indicar zoom */}
+                  <div className="absolute inset-0 bg-slate-950/0 group-hover/img:bg-slate-950/15 transition-colors flex items-center justify-center pointer-events-none">
+                    <span className="opacity-0 group-hover/img:opacity-100 transition-opacity p-2 rounded-xl bg-slate-900/80 text-white backdrop-blur-xs shadow-lg flex items-center gap-1.5 text-xs font-semibold">
+                      <Maximize2 className="w-4 h-4" />
+                      <span>Ver detalle</span>
+                    </span>
+                  </div>
 
                   {/* Insignia de Color de Filamento */}
                   <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-900/85 backdrop-blur-md text-white shadow-sm border border-white/10 z-10">
@@ -826,6 +852,14 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
         selectedCount={selectedIds.length}
         onClose={() => setIsBatchModalOpen(false)}
         onApply={handleApplyBatchUpdates}
+      />
+
+      {/* Lightbox para expandir imagen con zoom y detalle */}
+      <ImageZoomLightbox
+        isOpen={!!lightboxItem}
+        imageUrl={lightboxItem?.imageUrl || ''}
+        title={lightboxItem?.title || ''}
+        onClose={() => setLightboxItem(null)}
       />
     </div>
   );

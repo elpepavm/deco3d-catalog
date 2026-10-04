@@ -123,9 +123,17 @@ export const ImageZoomLightbox: React.FC<ImageZoomLightboxProps> = ({
     <div 
       className="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-md select-none animate-in fade-in duration-200"
       onMouseUp={handleMouseUp}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       {/* BARRA SUPERIOR */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800 bg-slate-900/80 text-white z-20">
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="flex items-center justify-between px-6 py-3 border-b border-slate-800 bg-slate-900/80 text-white z-20"
+      >
         <div className="flex items-center space-x-3">
           <div className="p-2 rounded-lg bg-rose-600/20 text-rose-400 border border-rose-500/30">
             <Maximize2 className="w-4 h-4" />
@@ -133,7 +141,7 @@ export const ImageZoomLightbox: React.FC<ImageZoomLightboxProps> = ({
           <div>
             <h3 className="text-sm font-bold text-slate-100">{title}</h3>
             <p className="text-xs text-slate-400">
-              Usa la rueda del mouse o los botones para hacer zoom • Arrastra para mover
+              Usa la rueda del mouse o los botones para hacer zoom • Arrastra para mover • Clic fuera o Esc para cerrar
             </p>
           </div>
         </div>
@@ -228,10 +236,10 @@ export const ImageZoomLightbox: React.FC<ImageZoomLightboxProps> = ({
           {/* Cerrar */}
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 transition-all ml-2"
-            title="Cerrar (Esc)"
+            className="p-2 rounded-xl bg-rose-600/30 hover:bg-rose-600 text-rose-200 hover:text-white border border-rose-500/50 transition-all ml-2"
+            title="Cerrar (Esc o clic afuera)"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -242,13 +250,19 @@ export const ImageZoomLightbox: React.FC<ImageZoomLightboxProps> = ({
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
+        onClick={(e) => {
+          if (e.target === containerRef.current) {
+            onClose();
+          }
+        }}
         className={`flex-1 relative overflow-hidden flex items-center justify-center p-4 ${
-          scale > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-default'
+          scale > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
         }`}
       >
         {activeTab === 'split' && compareImageUrl ? (
           // Vista de Cortina dentro del Lightbox
           <div 
+            onClick={(e) => e.stopPropagation()}
             className="relative max-w-4xl max-h-[85vh] aspect-square w-full h-full flex items-center justify-center rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-900"
             style={{
               transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
@@ -299,6 +313,11 @@ export const ImageZoomLightbox: React.FC<ImageZoomLightboxProps> = ({
         ) : (
           // Vista Normal con Zoom y Paneo
           <div
+            onClick={(e) => {
+              if (e.target === e.currentTarget && scale <= 1) {
+                onClose();
+              }
+            }}
             className="flex items-center justify-center w-full h-full"
             style={{
               transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
@@ -309,7 +328,13 @@ export const ImageZoomLightbox: React.FC<ImageZoomLightboxProps> = ({
             <img
               src={currentDisplayImg}
               alt={title}
-              className="max-w-[90vw] max-h-[85vh] object-contain drop-shadow-2xl pointer-events-none"
+              onClick={(e) => {
+                if (scale <= 1) {
+                  e.stopPropagation();
+                  handleZoomIn();
+                }
+              }}
+              className={`max-w-[90vw] max-h-[85vh] object-contain drop-shadow-2xl ${scale <= 1 ? 'cursor-zoom-in' : 'cursor-grab'}`}
             />
           </div>
         )}
@@ -318,7 +343,7 @@ export const ImageZoomLightbox: React.FC<ImageZoomLightboxProps> = ({
         {scale > 1 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 text-slate-300 text-xs px-3 py-1.5 rounded-full border border-slate-800 shadow-lg flex items-center gap-1.5 backdrop-blur-xs pointer-events-none">
             <Move className="w-3.5 h-3.5 text-rose-400" />
-            <span>Haz clic y arrastra para explorar los detalles</span>
+            <span>Haz clic y arrastra para explorar • Clic afuera o Esc para cerrar</span>
           </div>
         )}
       </div>
